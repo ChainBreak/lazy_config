@@ -9,6 +9,7 @@ description = "A config system that is lazily validated as parameters are used"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
+dependencies = ["omegaconf"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
