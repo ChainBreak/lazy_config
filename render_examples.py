@@ -9,7 +9,6 @@ import subprocess
 import sys
 import textwrap
 
-
 EXAMPLES_DIR = pathlib.Path(__file__).parent / "examples"
 OUTPUT_PATH = pathlib.Path(__file__).parent / "EXAMPLES.md"
 

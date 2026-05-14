@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Any, Iterator, TypeVar, overload
+from collections.abc import Iterator
+from typing import Any, TypeVar, overload
 
 import omegaconf
 
@@ -45,28 +46,28 @@ class LazyConfig:
         self._path_prefix = path_prefix
 
     @classmethod
-    def from_yaml(cls, path: str | pathlib.Path) -> "LazyConfig":
+    def from_yaml(cls, path: str | pathlib.Path) -> LazyConfig:
         raw = omegaconf.OmegaConf.load(path)
         data = omegaconf.OmegaConf.to_container(raw, resolve=True)
         tracker = tracker_module._AccessTracker("yaml", source_path=path)
         return cls(data, tracker)
 
     @classmethod
-    def from_json(cls, path: str | pathlib.Path) -> "LazyConfig":
+    def from_json(cls, path: str | pathlib.Path) -> LazyConfig:
         raw = omegaconf.OmegaConf.load(path)
         data = omegaconf.OmegaConf.to_container(raw, resolve=True)
         tracker = tracker_module._AccessTracker("json", source_path=path)
         return cls(data, tracker)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "LazyConfig":
+    def from_dict(cls, data: dict) -> LazyConfig:
         raw = omegaconf.OmegaConf.create(data)
         data = omegaconf.OmegaConf.to_container(raw, resolve=True)
         tracker = tracker_module._AccessTracker("dict")
         return cls(data, tracker)
 
     @overload
-    def get(self, key: str | int) -> "LazyConfig": ...
+    def get(self, key: str | int) -> LazyConfig: ...
 
     @overload
     def get(self, key: str | int, default: T) -> T: ...

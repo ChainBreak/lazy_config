@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import json
-import textwrap
 import pathlib
+import textwrap
+
 import pytest
-import yaml
 
 import lazy_config
 from lazy_config import LazyConfig, MissingConfigError
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -454,7 +453,7 @@ def test_ghost_list_iter_records_missing_sub_fields():
     message = str(exc_info.value)
     assert "people.0.age" in message
     assert "people.1.age" in message
-    
+
 
 # ---------------------------------------------------------------------------
 # Public API surface

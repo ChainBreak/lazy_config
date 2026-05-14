@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, Literal
-
 from . import _suggestions as suggestions_module
 from . import _tracker as tracker_module
 
