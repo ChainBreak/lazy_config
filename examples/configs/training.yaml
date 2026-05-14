@@ -1,0 +1,16 @@
+experiment_name: cifar10_baseline
+
+model:
+  architecture: resnet18
+  number_of_layers: 18
+  pretrained: true
+
+training:
+  number_of_epochs: 20
+  batch_size: 128
+  learning_rate: 0.01
+  weight_decay: 1.0e-4
+
+dataset:
+  name: cifar10
+  data_root: ./data
