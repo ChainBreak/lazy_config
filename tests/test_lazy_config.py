@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import textwrap
-
+import pathlib
 import pytest
 import yaml
 
@@ -15,13 +15,13 @@ from lazy_config import LazyConfig, MissingConfigError
 # ---------------------------------------------------------------------------
 
 
-def write_yaml(tmp_path, content: str):
+def write_yaml(tmp_path: pathlib.Path, content: str) -> pathlib.Path:
     path = tmp_path / "config.yaml"
     path.write_text(textwrap.dedent(content))
     return path
 
 
-def write_json(tmp_path, data: dict):
+def write_json(tmp_path: pathlib.Path, data: dict) -> pathlib.Path:
     path = tmp_path / "config.json"
     path.write_text(json.dumps(data, indent=2))
     return path
@@ -275,13 +275,166 @@ def test_omegaconf_interpolation_in_yaml(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Lists — top-level list YAML (integer indexing)
+# ---------------------------------------------------------------------------
+
+PEOPLE_YAML = """\
+- name: Alice
+  age: 30
+  city: New York
+- name: Bob
+  age: 25
+  city: London
+- name: Carol
+  age: 35
+  city: Sydney
+"""
+
+
+def test_top_level_list_integer_index(tmp_path):
+    path = write_yaml(tmp_path, PEOPLE_YAML)
+    config = LazyConfig.from_yaml(path)
+    assert config.get(0).get("name") == "Alice"
+    assert config.get(1).get("name") == "Bob"
+    assert config.get(2).get("city") == "Sydney"
+
+
+def test_top_level_list_integer_index_returns_lazy_config(tmp_path):
+    path = write_yaml(tmp_path, PEOPLE_YAML)
+    config = LazyConfig.from_yaml(path)
+    alice = config.get(0)
+    assert isinstance(alice, LazyConfig)
+
+
+def test_top_level_list_leaf_values(tmp_path):
+    path = write_yaml(tmp_path, PEOPLE_YAML)
+    config = LazyConfig.from_yaml(path)
+    assert config.get(0).get("age") == 30
+    assert isinstance(config.get(0).get("age"), int)
+
+
+def test_top_level_list_out_of_bounds_returns_ghost(tmp_path):
+    path = write_yaml(tmp_path, PEOPLE_YAML)
+    config = LazyConfig.from_yaml(path)
+    ghost = config.get(99)
+    assert isinstance(ghost, LazyConfig)
+    result = ghost.get("name", "default_name")
+    assert result == "default_name"
+
+
+# ---------------------------------------------------------------------------
+# Lists — iteration over a list-valued key
+# ---------------------------------------------------------------------------
+
+LAYERS_YAML = """\
+layers:
+  - norm: BatchNorm
+    size: 64
+  - norm: BatchNorm
+    size: 128
+  - norm: LayerNorm
+    size: 256
+"""
+
+
+def test_iteration_yields_lazy_config_for_dict_elements(tmp_path):
+    path = write_yaml(tmp_path, LAYERS_YAML)
+    config = LazyConfig.from_yaml(path)
+    for layer_config in config.get("layers"):
+        assert isinstance(layer_config, LazyConfig)
+        assert layer_config.get("norm") in ("BatchNorm", "LayerNorm")
+
+
+def test_iteration_correct_values(tmp_path):
+    path = write_yaml(tmp_path, LAYERS_YAML)
+    config = LazyConfig.from_yaml(path)
+    sizes = [layer.get("size") for layer in config.get("layers")]
+    assert sizes == [64, 128, 256]
+
+
+def test_iteration_length(tmp_path):
+    path = write_yaml(tmp_path, LAYERS_YAML)
+    config = LazyConfig.from_yaml(path)
+    assert len(list(config.get("layers"))) == 3
+
+
+def test_iteration_over_scalar_list_yields_plain_values():
+    config = LazyConfig.from_dict({"tags": ["a", "b", "c"]})
+    assert list(config.get("tags")) == ["a", "b", "c"]
+
+
+def test_iteration_over_non_list_raises():
+    config = LazyConfig.from_dict({"model": {"layers": 4}})
+    with pytest.raises(TypeError):
+        list(config.get("model"))
+
+
+def test_get_no_default_on_scalar_returns_value():
+    config = LazyConfig.from_dict({"learning_rate": 0.001})
+    assert config.get("learning_rate") == 0.001
+
+
+# ---------------------------------------------------------------------------
+# Lists — iteration recording missing sub-fields
+# ---------------------------------------------------------------------------
+
+PEOPLE_NO_AGE_YAML = """\
+people:
+  - name: Alice
+  - name: Bob
+"""
+
+
+def test_iteration_over_real_list_records_missing_sub_fields(tmp_path):
+    """Real list exists but items are missing 'age'; check() reports both paths."""
+    path = write_yaml(tmp_path, PEOPLE_NO_AGE_YAML)
+    config = LazyConfig.from_yaml(path)
+
+    for person in config.get("people"):
+        assert isinstance(person, LazyConfig)
+        age = person.get("age", 42)
+        assert age == 42
+
+    with pytest.raises(MissingConfigError) as exc_info:
+        config.check()
+    message = str(exc_info.value)
+    assert "people.0.age" in message
+    assert "people.1.age" in message
+
+
+def test_ghost_list_index_access_records_correct_paths():
+    """'people' key is entirely absent; index access into the ghost records paths."""
+    config = LazyConfig.from_dict({})
+    people = config.get("people")
+    assert isinstance(people, LazyConfig)
+
+    for index in range(2):
+        person = people.get(index)
+        assert isinstance(person, LazyConfig)
+        age = person.get("age", 42)
+        assert age == 42
+
+    with pytest.raises(MissingConfigError) as exc_info:
+        config.check()
+    message = str(exc_info.value)
+    assert "people.0.age" in message
+    assert "people.1.age" in message
+
+
+def test_ghost_list_iter_yields_nothing():
+    """Iterating a ghost LazyConfig (missing key) yields no items; no TypeError."""
+    config = LazyConfig.from_dict({})
+    assert list(config.get("people")) == []
+
+
+# ---------------------------------------------------------------------------
 # Public API surface
 # ---------------------------------------------------------------------------
 
-# Good
+
 def test_module_exports_lazy_config():
     assert hasattr(lazy_config, "LazyConfig")
 
-# Good
+
 def test_module_exports_missing_config_error():
     assert hasattr(lazy_config, "MissingConfigError")

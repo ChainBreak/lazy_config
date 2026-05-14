@@ -14,8 +14,10 @@ class MissingConfigError(ValueError):
             tracker.missing, tracker.source_format
         )
         source_description = _describe_source(tracker)
+        missing_paths = "\n".join(f"  - {path}" for path in tracker.missing)
         message = (
-            f"The following parameters were used but missing from the config.\n"
+            f"The following parameters were used but missing from the config:\n"
+            f"{missing_paths}\n\n"
             f"Since this started from {source_description}, you should add:\n\n"
             f"{suggestion}"
         )

@@ -7,8 +7,12 @@ from typing import Any, Literal
 import yaml
 
 
-def build_nested(missing: dict[str, Any]) -> dict:
-    """Explode dotted-path keys back into a nested dict."""
+def build_nested(missing: dict[str, Any]) -> Any:
+    """Explode dotted-path keys back into a nested dict.
+
+    Path segments that are consecutive integers starting from 0 are converted
+    to lists so the YAML/JSON suggestion uses proper list syntax.
+    """
     nested: dict = {}
     for dotted_path, default_value in missing.items():
         parts = dotted_path.split(".")
@@ -18,7 +22,21 @@ def build_nested(missing: dict[str, Any]) -> dict:
                 node[part] = {}
             node = node[part]
         node[parts[-1]] = default_value
-    return nested
+    return _convert_integer_keys_to_lists(nested)
+
+
+def _convert_integer_keys_to_lists(node: Any) -> Any:
+    """Recursively replace dicts whose keys are consecutive ints (0, 1, …) with lists."""
+    if not isinstance(node, dict):
+        return node
+    converted = {key: _convert_integer_keys_to_lists(value) for key, value in node.items()}
+    try:
+        integer_keys = sorted(int(key) for key in converted)
+        if integer_keys == list(range(len(integer_keys))):
+            return [converted[str(i)] for i in integer_keys]
+    except ValueError:
+        pass
+    return converted
 
 
 def format_suggestion(
