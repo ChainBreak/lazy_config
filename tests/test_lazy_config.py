@@ -421,11 +421,40 @@ def test_ghost_list_index_access_records_correct_paths():
     assert "people.1.age" in message
 
 
-def test_ghost_list_iter_yields_nothing():
-    """Iterating a ghost LazyConfig (missing key) yields no items; no TypeError."""
+def test_ghost_list_iter_yields_two_ghost_sub_configs():
+    """Iterating a ghost LazyConfig yields exactly two ghost sub-configs."""
     config = LazyConfig.from_dict({})
-    assert list(config.get("people")) == []
+    items = list(config.get("people"))
+    assert len(items) == 2
+    for item in items:
+        assert isinstance(item, LazyConfig)
 
+def test_get_with_list_default_records_key_as_missing():
+    """get("people", []) when people is absent records the key itself as missing."""
+    config = LazyConfig.from_dict({})
+    result = config.get("people", [])
+    assert result == []
+
+    with pytest.raises(MissingConfigError) as exc_info:
+        config.check()
+    message = str(exc_info.value)
+    assert "people" in message
+
+
+def test_ghost_list_iter_records_missing_sub_fields():
+    """Iterating a ghost with a for-loop records people.0.age and people.1.age."""
+    config = LazyConfig.from_dict({})
+    for person in config.get("people"):
+        assert isinstance(person, LazyConfig)
+        age = person.get("age", 42)
+        assert age == 42
+
+    with pytest.raises(MissingConfigError) as exc_info:
+        config.check()
+    message = str(exc_info.value)
+    assert "people.0.age" in message
+    assert "people.1.age" in message
+    
 
 # ---------------------------------------------------------------------------
 # Public API surface

@@ -97,11 +97,13 @@ class LazyConfig:
     def __iter__(self) -> Iterator[Any]:
         """Iterate over a list-backed config, wrapping dict elements as LazyConfig.
 
-        Ghost configs (missing key) yield nothing; the missing paths are recorded
-        when individual fields are accessed on child ghost configs.
+        Ghost configs (missing key) yield two ghost sub-configs (indices 0 and 1)
+        so that field accesses inside the loop record the correct missing paths.
         Dict-backed configs are not iterable and raise TypeError.
         """
         if self._data is None:
+            for index in range(2):
+                yield LazyConfig(None, self._tracker, _join_path(self._path_prefix, index))
             return
         if not isinstance(self._data, list):
             raise TypeError(
