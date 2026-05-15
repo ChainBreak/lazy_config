@@ -20,7 +20,7 @@ classifiers = [
 dev = ["pytest", "ruff", "mypy"]
 
 [project.urls]
-Homepage = "https://github.com/thomasr/lazy_config"
+Homepage = "https://github.com/ChainBreak/lazy_config"
 
 [tool.hatch.build.targets.wheel]
 packages = ["lazy_config"]
