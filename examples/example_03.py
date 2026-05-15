@@ -6,7 +6,7 @@ MissingConfigError that lists every missing path and shows exactly what to add.
 """
 import lazy_config
 
-config = lazy_config.LazyConfig.from_dict({
+config = lazy_config.LazyConfig({
     "batch_size": 64,
     # learning_rate and model block are intentionally absent
 })

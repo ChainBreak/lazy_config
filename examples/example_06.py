@@ -39,7 +39,7 @@ def run_training(config: lazy_config.LazyConfig) -> None:
     print("Done.")
 
 
-config = lazy_config.LazyConfig.from_dict({
+config = lazy_config.LazyConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,

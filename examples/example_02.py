@@ -5,7 +5,7 @@ You can chain these calls to reach deeply nested leaves.
 """
 import lazy_config
 
-config = lazy_config.LazyConfig.from_dict({
+config = lazy_config.LazyConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,

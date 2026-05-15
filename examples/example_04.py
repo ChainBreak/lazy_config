@@ -1,14 +1,14 @@
 """Example 04: Loading config from a YAML file.
 
-LazyConfig.from_yaml() accepts any path and uses OmegaConf under the hood,
-so interpolations and anchors supported by OmegaConf work out of the box.
+Pass any .yaml or .yml path directly to LazyConfig(). OmegaConf is used under
+the hood, so interpolations and anchors work out of the box.
 """
 import pathlib
 
 import lazy_config
 
 yaml_path = pathlib.Path(__file__).parent / "configs" / "training.yaml"
-config = lazy_config.LazyConfig.from_yaml(yaml_path)
+config = lazy_config.LazyConfig(yaml_path)
 
 experiment_name = config.get("experiment_name", "untitled")
 

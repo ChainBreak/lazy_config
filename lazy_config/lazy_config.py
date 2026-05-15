@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pathlib
 from collections.abc import Iterator
-from typing import Any, TypeVar, cast, overload
+from typing import Any, Literal, TypeVar, cast, overload
 
 import omegaconf
 
@@ -37,43 +37,41 @@ class LazyConfig:
 
     def __init__(
         self,
-        data: dict[str, Any] | list[Any] | None,
-        tracker: tracker_module.AccessTracker,
+        data: str | pathlib.Path | dict[str, Any] | list[Any] | None = None,
+        tracker: tracker_module.AccessTracker | None = None,
         path_prefix: str = "",
     ) -> None:
-        self._data = data
-        self._tracker = tracker
         self._path_prefix = path_prefix
 
-    @classmethod
-    def from_yaml(cls, path: str | pathlib.Path) -> LazyConfig:
-        raw = omegaconf.OmegaConf.load(path)
-        data = cast(
-            "dict[str, Any] | list[Any] | None",
-            omegaconf.OmegaConf.to_container(raw, resolve=True),
-        )
-        tracker = tracker_module.AccessTracker("yaml", source_path=path)
-        return cls(data, tracker)
+        if tracker is not None:
+            # Internal construction (sub-configs, ghost configs) — data already processed.
+            self._data: dict[str, Any] | list[Any] | None = cast(
+                "dict[str, Any] | list[Any] | None", data
+            )
+            self._tracker = tracker
+            return
 
-    @classmethod
-    def from_json(cls, path: str | pathlib.Path) -> LazyConfig:
-        raw = omegaconf.OmegaConf.load(path)
-        data = cast(
-            "dict[str, Any] | list[Any] | None",
-            omegaconf.OmegaConf.to_container(raw, resolve=True),
-        )
-        tracker = tracker_module.AccessTracker("json", source_path=path)
-        return cls(data, tracker)
-
-    @classmethod
-    def from_dict(cls, source: dict[str, Any]) -> LazyConfig:
-        raw = omegaconf.OmegaConf.create(source)
-        data = cast(
-            "dict[str, Any] | list[Any] | None",
-            omegaconf.OmegaConf.to_container(raw, resolve=True),
-        )
-        tracker = tracker_module.AccessTracker("dict")
-        return cls(data, tracker)
+        # User-facing construction — detect source and run OmegaConf processing.
+        if isinstance(data, (str, pathlib.Path)):
+            path = pathlib.Path(data)
+            raw = omegaconf.OmegaConf.load(path)
+            source_format: Literal["yaml", "json"] = "json" if path.suffix == ".json" else "yaml"
+            self._data = cast(
+                "dict[str, Any] | list[Any] | None",
+                omegaconf.OmegaConf.to_container(raw, resolve=True),
+            )
+            self._tracker = tracker_module.AccessTracker(source_format, source_path=path)
+        elif isinstance(data, dict):
+            raw = omegaconf.OmegaConf.create(data)
+            self._data = cast(
+                "dict[str, Any] | list[Any] | None",
+                omegaconf.OmegaConf.to_container(raw, resolve=True),
+            )
+            self._tracker = tracker_module.AccessTracker("dict")
+        else:
+            # list or None — store as-is, default to dict suggestion format.
+            self._data = data
+            self._tracker = tracker_module.AccessTracker()
 
     @overload
     def get(self, key: str | int) -> LazyConfig: ...

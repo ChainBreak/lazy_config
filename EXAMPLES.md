@@ -19,7 +19,7 @@ The simplest way to get started — no files required.
 """
 import lazy_config
 
-config = lazy_config.LazyConfig.from_dict({
+config = lazy_config.LazyConfig({
     "learning_rate": 0.001,
     "batch_size": 32,
     "number_of_epochs": 10,
@@ -69,7 +69,7 @@ You can chain these calls to reach deeply nested leaves.
 """
 import lazy_config
 
-config = lazy_config.LazyConfig.from_dict({
+config = lazy_config.LazyConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,
@@ -145,7 +145,7 @@ MissingConfigError that lists every missing path and shows exactly what to add.
 """
 import lazy_config
 
-config = lazy_config.LazyConfig.from_dict({
+config = lazy_config.LazyConfig({
     "batch_size": 64,
     # learning_rate and model block are intentionally absent
 })
@@ -197,23 +197,23 @@ Since this started from a dict, you should add:
 
 Example 04: Loading config from a YAML file.
 
-LazyConfig.from_yaml() accepts any path and uses OmegaConf under the hood,
-so interpolations and anchors supported by OmegaConf work out of the box.
+Pass any .yaml or .yml path directly to LazyConfig(). OmegaConf is used under
+the hood, so interpolations and anchors work out of the box.
 
 ### Code
 
 ```python
 """Example 04: Loading config from a YAML file.
 
-LazyConfig.from_yaml() accepts any path and uses OmegaConf under the hood,
-so interpolations and anchors supported by OmegaConf work out of the box.
+Pass any .yaml or .yml path directly to LazyConfig(). OmegaConf is used under
+the hood, so interpolations and anchors work out of the box.
 """
 import pathlib
 
 import lazy_config
 
 yaml_path = pathlib.Path(__file__).parent / "configs" / "training.yaml"
-config = lazy_config.LazyConfig.from_yaml(yaml_path)
+config = lazy_config.LazyConfig(yaml_path)
 
 experiment_name = config.get("experiment_name", "untitled")
 
@@ -263,25 +263,25 @@ check() passed — all keys present in the YAML.
 
 Example 05: Loading config from a JSON file and iterating over a list.
 
-LazyConfig.from_json() works just like from_yaml(). When a key holds a list
-of dicts, iterating the returned LazyConfig wraps each dict element as its
-own LazyConfig so you can call get() on each item.
+Pass any .json path directly to LazyConfig(). When a key holds a list of
+dicts, iterating the returned LazyConfig wraps each dict element as its own
+LazyConfig so you can call get() on each item.
 
 ### Code
 
 ```python
 """Example 05: Loading config from a JSON file and iterating over a list.
 
-LazyConfig.from_json() works just like from_yaml(). When a key holds a list
-of dicts, iterating the returned LazyConfig wraps each dict element as its
-own LazyConfig so you can call get() on each item.
+Pass any .json path directly to LazyConfig(). When a key holds a list of
+dicts, iterating the returned LazyConfig wraps each dict element as its own
+LazyConfig so you can call get() on each item.
 """
 import pathlib
 
 import lazy_config
 
 json_path = pathlib.Path(__file__).parent / "configs" / "augmentations.json"
-config = lazy_config.LazyConfig.from_json(json_path)
+config = lazy_config.LazyConfig(json_path)
 
 pipeline_config = config.get("pipeline")
 
@@ -360,7 +360,7 @@ def run_training(config: lazy_config.LazyConfig) -> None:
     print("Done.")
 
 
-config = lazy_config.LazyConfig.from_dict({
+config = lazy_config.LazyConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,

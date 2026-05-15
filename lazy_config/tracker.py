@@ -9,7 +9,7 @@ class AccessTracker:
 
     def __init__(
         self,
-        source_format: Literal["yaml", "json", "dict"],
+        source_format: Literal["yaml", "json", "dict"] = "dict",
         source_path: pathlib.Path | str | None = None,
     ) -> None:
         self.source_format = source_format
