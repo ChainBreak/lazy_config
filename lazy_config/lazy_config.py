@@ -6,8 +6,8 @@ from typing import Any, TypeVar, cast, overload
 
 import omegaconf
 
-from . import _errors as errors_module
-from . import _tracker as tracker_module
+from . import errors as errors_module
+from . import tracker as tracker_module
 
 _MISSING = object()
 _NOT_FOUND = object()
@@ -38,7 +38,7 @@ class LazyConfig:
     def __init__(
         self,
         data: dict[str, Any] | list[Any] | None,
-        tracker: tracker_module._AccessTracker,
+        tracker: tracker_module.AccessTracker,
         path_prefix: str = "",
     ) -> None:
         self._data = data
@@ -52,7 +52,7 @@ class LazyConfig:
             "dict[str, Any] | list[Any] | None",
             omegaconf.OmegaConf.to_container(raw, resolve=True),
         )
-        tracker = tracker_module._AccessTracker("yaml", source_path=path)
+        tracker = tracker_module.AccessTracker("yaml", source_path=path)
         return cls(data, tracker)
 
     @classmethod
@@ -62,7 +62,7 @@ class LazyConfig:
             "dict[str, Any] | list[Any] | None",
             omegaconf.OmegaConf.to_container(raw, resolve=True),
         )
-        tracker = tracker_module._AccessTracker("json", source_path=path)
+        tracker = tracker_module.AccessTracker("json", source_path=path)
         return cls(data, tracker)
 
     @classmethod
@@ -72,7 +72,7 @@ class LazyConfig:
             "dict[str, Any] | list[Any] | None",
             omegaconf.OmegaConf.to_container(raw, resolve=True),
         )
-        tracker = tracker_module._AccessTracker("dict")
+        tracker = tracker_module.AccessTracker("dict")
         return cls(data, tracker)
 
     @overload

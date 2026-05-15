@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from . import _suggestions as suggestions_module
-from . import _tracker as tracker_module
+from . import suggestions as suggestions_module
+from . import tracker as tracker_module
 
 
 class MissingConfigError(ValueError):
     """Raised by `LazyConfig.check()` when accessed keys were absent from the config."""
 
-    def __init__(self, tracker: tracker_module._AccessTracker) -> None:
+    def __init__(self, tracker: tracker_module.AccessTracker) -> None:
         suggestion = suggestions_module.format_suggestion(
             tracker.missing, tracker.source_format
         )
@@ -22,7 +22,7 @@ class MissingConfigError(ValueError):
         super().__init__(message)
 
 
-def _describe_source(tracker: tracker_module._AccessTracker) -> str:
+def _describe_source(tracker: tracker_module.AccessTracker) -> str:
     if tracker.source_path is not None:
         return f"a {tracker.source_format} ({tracker.source_path})"
     return f"a {tracker.source_format}"

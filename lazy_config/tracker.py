@@ -4,7 +4,7 @@ import pathlib
 from typing import Any, Literal
 
 
-class _AccessTracker:
+class AccessTracker:
     """Tracks leaf accesses that could not be satisfied from the backing config data."""
 
     def __init__(
