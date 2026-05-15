@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pathlib
 from collections.abc import Iterator
-from typing import Any, TypeVar, overload
+from typing import Any, TypeVar, cast, overload
 
 import omegaconf
 
@@ -37,7 +37,7 @@ class LazyConfig:
 
     def __init__(
         self,
-        data: dict | list | None,
+        data: dict[str, Any] | list[Any] | None,
         tracker: tracker_module._AccessTracker,
         path_prefix: str = "",
     ) -> None:
@@ -48,21 +48,30 @@ class LazyConfig:
     @classmethod
     def from_yaml(cls, path: str | pathlib.Path) -> LazyConfig:
         raw = omegaconf.OmegaConf.load(path)
-        data = omegaconf.OmegaConf.to_container(raw, resolve=True)
+        data = cast(
+            "dict[str, Any] | list[Any] | None",
+            omegaconf.OmegaConf.to_container(raw, resolve=True),
+        )
         tracker = tracker_module._AccessTracker("yaml", source_path=path)
         return cls(data, tracker)
 
     @classmethod
     def from_json(cls, path: str | pathlib.Path) -> LazyConfig:
         raw = omegaconf.OmegaConf.load(path)
-        data = omegaconf.OmegaConf.to_container(raw, resolve=True)
+        data = cast(
+            "dict[str, Any] | list[Any] | None",
+            omegaconf.OmegaConf.to_container(raw, resolve=True),
+        )
         tracker = tracker_module._AccessTracker("json", source_path=path)
         return cls(data, tracker)
 
     @classmethod
-    def from_dict(cls, data: dict) -> LazyConfig:
-        raw = omegaconf.OmegaConf.create(data)
-        data = omegaconf.OmegaConf.to_container(raw, resolve=True)
+    def from_dict(cls, source: dict[str, Any]) -> LazyConfig:
+        raw = omegaconf.OmegaConf.create(source)
+        data = cast(
+            "dict[str, Any] | list[Any] | None",
+            omegaconf.OmegaConf.to_container(raw, resolve=True),
+        )
         tracker = tracker_module._AccessTracker("dict")
         return cls(data, tracker)
 
@@ -129,6 +138,8 @@ class LazyConfig:
             if not isinstance(key, int) or key < 0 or key >= len(self._data):
                 return _NOT_FOUND
             return self._data[key]
+        if not isinstance(key, str):
+            return _NOT_FOUND
         return self._data.get(key, _NOT_FOUND)
 
 

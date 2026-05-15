@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import pprint
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import yaml
 
@@ -13,7 +13,7 @@ def build_nested(missing: dict[str, Any]) -> Any:
     Path segments that are consecutive integers starting from 0 are converted
     to lists so the YAML/JSON suggestion uses proper list syntax.
     """
-    nested: dict = {}
+    nested: dict[str, Any] = {}
     for dotted_path, default_value in missing.items():
         parts = dotted_path.split(".")
         node = nested
@@ -45,7 +45,7 @@ def format_suggestion(
 ) -> str:
     nested = build_nested(missing)
     if source_format == "yaml":
-        return yaml.safe_dump(nested, sort_keys=False, default_flow_style=False)
+        return cast(str, yaml.safe_dump(nested, sort_keys=False, default_flow_style=False))
     if source_format == "json":
         return json.dumps(nested, indent=2)
     return pprint.pformat(nested, sort_dicts=False)
