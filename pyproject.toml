@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "lazy_config"
+name = "ghostconfig"
 version = "0.1.0"
 description = "A config system that is lazily validated as parameters are used"
 readme = "README.md"
@@ -23,7 +23,7 @@ dev = ["pytest", "ruff", "mypy"]
 Homepage = "https://github.com/ChainBreak/lazy_config"
 
 [tool.hatch.build.targets.wheel]
-packages = ["lazy_config"]
+packages = ["ghostconfig"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

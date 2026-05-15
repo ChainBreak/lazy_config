@@ -15,18 +15,18 @@ _NOT_FOUND = object()
 T = TypeVar("T")
 
 
-class LazyConfig:
+class GhostConfig:
     """A config system that is lazily validated as parameters are used.
 
-    Build a LazyConfig from a YAML file, JSON file, or plain dict, then access
+    Build a GhostConfig from a YAML file, JSON file, or plain dict, then access
     parameters with `get()`. Call `check()` at the end of setup to surface any
     keys that were accessed but absent from the backing config.
 
     get(key) with no default:
-        - dict value  → LazyConfig (sub-config)
-        - list value  → LazyConfig (iterable; each dict element is a LazyConfig)
+        - dict value  → GhostConfig (sub-config)
+        - list value  → GhostConfig (iterable; each dict element is a GhostConfig)
         - scalar leaf → the scalar value directly
-        - missing key → ghost LazyConfig (records missing on subsequent leaf access)
+        - missing key → ghost GhostConfig (records missing on subsequent leaf access)
 
     get(key, default) with a default:
         - dict value  → TypeError (use get(key) to navigate into sub-configs)
@@ -74,7 +74,7 @@ class LazyConfig:
             self._tracker = tracker_module.AccessTracker()
 
     @overload
-    def get(self, key: str | int) -> LazyConfig: ...
+    def get(self, key: str | int) -> GhostConfig: ...
 
     @overload
     def get(self, key: str | int, default: T) -> T: ...
@@ -85,9 +85,9 @@ class LazyConfig:
 
         if default is _MISSING:
             if isinstance(value, (dict, list)):
-                return LazyConfig(value, self._tracker, full_path)
+                return GhostConfig(value, self._tracker, full_path)
             if value is _NOT_FOUND:
-                return LazyConfig(None, self._tracker, full_path)
+                return GhostConfig(None, self._tracker, full_path)
             return value
 
         if value is _NOT_FOUND:
@@ -97,13 +97,13 @@ class LazyConfig:
         if isinstance(value, dict):
             raise TypeError(
                 f"'{full_path}' is a sub-config, not a leaf value. "
-                f"Call get('{key}') without a default to get a LazyConfig."
+                f"Call get('{key}') without a default to get a GhostConfig."
             )
 
         return value
 
     def __iter__(self) -> Iterator[Any]:
-        """Iterate over a list-backed config, wrapping dict elements as LazyConfig.
+        """Iterate over a list-backed config, wrapping dict elements as GhostConfig.
 
         Ghost configs (missing key) yield two ghost sub-configs (indices 0 and 1)
         so that field accesses inside the loop record the correct missing paths.
@@ -111,7 +111,7 @@ class LazyConfig:
         """
         if self._data is None:
             for index in range(2):
-                yield LazyConfig(None, self._tracker, _join_path(self._path_prefix, index))
+                yield GhostConfig(None, self._tracker, _join_path(self._path_prefix, index))
             return
         if not isinstance(self._data, list):
             raise TypeError(
@@ -120,7 +120,7 @@ class LazyConfig:
         for index, item in enumerate(self._data):
             child_path = _join_path(self._path_prefix, index)
             if isinstance(item, (dict, list)):
-                yield LazyConfig(item, self._tracker, child_path)
+                yield GhostConfig(item, self._tracker, child_path)
             else:
                 yield item
 
