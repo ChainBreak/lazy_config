@@ -403,7 +403,7 @@ def test_iteration_over_real_list_records_missing_sub_fields(tmp_path):
 
 def test_ghost_list_index_access_records_correct_paths():
     """'people' key is entirely absent; index access into the ghost records paths."""
-    config = GhostConfig({})
+    config = GhostConfig()
     people = config.get("people")
     assert isinstance(people, GhostConfig)
 
@@ -422,7 +422,7 @@ def test_ghost_list_index_access_records_correct_paths():
 
 def test_ghost_list_iter_yields_two_ghost_sub_configs():
     """Iterating a ghost GhostConfig yields exactly two ghost sub-configs."""
-    config = GhostConfig({})
+    config = GhostConfig()
     items = list(config.get("people"))
     assert len(items) == 2
     for item in items:
@@ -430,7 +430,7 @@ def test_ghost_list_iter_yields_two_ghost_sub_configs():
 
 def test_get_with_list_default_records_key_as_missing():
     """get("people", []) when people is absent records the key itself as missing."""
-    config = GhostConfig({})
+    config = GhostConfig()
     result = config.get("people", [])
     assert result == []
 
@@ -442,7 +442,7 @@ def test_get_with_list_default_records_key_as_missing():
 
 def test_ghost_list_iter_records_missing_sub_fields():
     """Iterating a ghost with a for-loop records people.0.age and people.1.age."""
-    config = GhostConfig({})
+    config = GhostConfig()
     for person in config.get("people"):
         assert isinstance(person, GhostConfig)
         age = person.get("age", 42)
