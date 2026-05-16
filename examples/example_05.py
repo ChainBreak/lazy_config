@@ -1,15 +1,15 @@
 """Example 05: Loading config from a JSON file and iterating over a list.
 
-Pass any .json path directly to LazyConfig(). When a key holds a list of
-dicts, iterating the returned LazyConfig wraps each dict element as its own
-LazyConfig so you can call get() on each item.
+Pass any .json path directly to GhostConfig(). When a key holds a list of
+dicts, iterating the returned GhostConfig wraps each dict element as its own
+GhostConfig so you can call get() on each item.
 """
 import pathlib
 
-import lazy_config
+import ghostconfig
 
 json_path = pathlib.Path(__file__).parent / "configs" / "augmentations.json"
-config = lazy_config.LazyConfig(json_path)
+config = ghostconfig.GhostConfig(json_path)
 
 pipeline_config = config.get("pipeline")
 

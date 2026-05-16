@@ -4,9 +4,9 @@ When a key is absent from the config, get(key, default) silently returns the
 default and records the miss. Calling check() at the end of setup raises a
 MissingConfigError that lists every missing path and shows exactly what to add.
 """
-import lazy_config
+import ghostconfig
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "batch_size": 64,
     # learning_rate and model block are intentionally absent
 })
@@ -27,6 +27,6 @@ print()
 
 try:
     config.check()
-except lazy_config.MissingConfigError as error:
+except ghostconfig.MissingConfigError as error:
     print("MissingConfigError caught:")
     print(str(error))

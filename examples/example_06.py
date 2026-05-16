@@ -1,10 +1,10 @@
-"""Example 06: Using LazyConfig to wire up a training script.
+"""Example 06: Using GhostConfig to wire up a training script.
 
 This shows a realistic pattern: read all parameters up front, then call
 check() once before any expensive work begins. If anything is missing the
 error surfaces immediately with a ready-to-paste suggestion.
 """
-import lazy_config
+import ghostconfig
 
 
 def build_model(architecture: str, number_of_layers: int, dropout: float) -> str:
@@ -15,7 +15,7 @@ def build_optimizer(model_name: str, learning_rate: float, weight_decay: float) 
     return f"AdamW(lr={learning_rate}, wd={weight_decay}) on {model_name}"
 
 
-def run_training(config: lazy_config.LazyConfig) -> None:
+def run_training(config: ghostconfig.GhostConfig) -> None:
     model_config = config.get("model")
     architecture = model_config.get("architecture", "resnet18")
     number_of_layers = model_config.get("number_of_layers", 18)
@@ -39,7 +39,7 @@ def run_training(config: lazy_config.LazyConfig) -> None:
     print("Done.")
 
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,

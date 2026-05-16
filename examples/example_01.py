@@ -2,9 +2,9 @@
 
 The simplest way to get started — no files required.
 """
-import lazy_config
+import ghostconfig
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "learning_rate": 0.001,
     "batch_size": 32,
     "number_of_epochs": 10,

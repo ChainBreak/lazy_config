@@ -1,6 +1,6 @@
-# LazyConfig Examples
+# GhostConfig Examples
 
-Each example below is a self-contained script demonstrating one aspect of `LazyConfig`. The output shown was produced by running the script directly.
+Each example below is a self-contained script demonstrating one aspect of `GhostConfig`. The output shown was produced by running the script directly.
 
 ---
 
@@ -17,9 +17,9 @@ The simplest way to get started — no files required.
 
 The simplest way to get started — no files required.
 """
-import lazy_config
+import ghostconfig
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "learning_rate": 0.001,
     "batch_size": 32,
     "number_of_epochs": 10,
@@ -56,7 +56,7 @@ check() passed — no missing keys.
 
 Example 02: Navigating nested sub-configs.
 
-Calling get(key) without a default on a dict value returns a child LazyConfig.
+Calling get(key) without a default on a dict value returns a child GhostConfig.
 You can chain these calls to reach deeply nested leaves.
 
 ### Code
@@ -64,12 +64,12 @@ You can chain these calls to reach deeply nested leaves.
 ```python
 """Example 02: Navigating nested sub-configs.
 
-Calling get(key) without a default on a dict value returns a child LazyConfig.
+Calling get(key) without a default on a dict value returns a child GhostConfig.
 You can chain these calls to reach deeply nested leaves.
 """
-import lazy_config
+import ghostconfig
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,
@@ -143,9 +143,9 @@ When a key is absent from the config, get(key, default) silently returns the
 default and records the miss. Calling check() at the end of setup raises a
 MissingConfigError that lists every missing path and shows exactly what to add.
 """
-import lazy_config
+import ghostconfig
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "batch_size": 64,
     # learning_rate and model block are intentionally absent
 })
@@ -166,7 +166,7 @@ print()
 
 try:
     config.check()
-except lazy_config.MissingConfigError as error:
+except ghostconfig.MissingConfigError as error:
     print("MissingConfigError caught:")
     print(str(error))
 ```
@@ -180,10 +180,11 @@ layers        : 18  (missing — default used)
 learning_rate : 0.001  (missing — default used)
 
 MissingConfigError caught:
-The following parameters were used but missing from the config:
-  - model.architecture
-  - model.number_of_layers
-  - learning_rate
+The following parameters were used but missing from the config.
+Missing keys:
+  model.architecture: 'resnet18'
+  model.number_of_layers: 18
+  learning_rate: 0.001
 
 Since this started from a dict, you should add:
 
@@ -197,7 +198,7 @@ Since this started from a dict, you should add:
 
 Example 04: Loading config from a YAML file.
 
-Pass any .yaml or .yml path directly to LazyConfig(). OmegaConf is used under
+Pass any .yaml or .yml path directly to GhostConfig(). OmegaConf is used under
 the hood, so interpolations and anchors work out of the box.
 
 ### Code
@@ -205,15 +206,15 @@ the hood, so interpolations and anchors work out of the box.
 ```python
 """Example 04: Loading config from a YAML file.
 
-Pass any .yaml or .yml path directly to LazyConfig(). OmegaConf is used under
+Pass any .yaml or .yml path directly to GhostConfig(). OmegaConf is used under
 the hood, so interpolations and anchors work out of the box.
 """
 import pathlib
 
-import lazy_config
+import ghostconfig
 
 yaml_path = pathlib.Path(__file__).parent / "configs" / "training.yaml"
-config = lazy_config.LazyConfig(yaml_path)
+config = ghostconfig.GhostConfig(yaml_path)
 
 experiment_name = config.get("experiment_name", "untitled")
 
@@ -263,25 +264,25 @@ check() passed — all keys present in the YAML.
 
 Example 05: Loading config from a JSON file and iterating over a list.
 
-Pass any .json path directly to LazyConfig(). When a key holds a list of
-dicts, iterating the returned LazyConfig wraps each dict element as its own
-LazyConfig so you can call get() on each item.
+Pass any .json path directly to GhostConfig(). When a key holds a list of
+dicts, iterating the returned GhostConfig wraps each dict element as its own
+GhostConfig so you can call get() on each item.
 
 ### Code
 
 ```python
 """Example 05: Loading config from a JSON file and iterating over a list.
 
-Pass any .json path directly to LazyConfig(). When a key holds a list of
-dicts, iterating the returned LazyConfig wraps each dict element as its own
-LazyConfig so you can call get() on each item.
+Pass any .json path directly to GhostConfig(). When a key holds a list of
+dicts, iterating the returned GhostConfig wraps each dict element as its own
+GhostConfig so you can call get() on each item.
 """
 import pathlib
 
-import lazy_config
+import ghostconfig
 
 json_path = pathlib.Path(__file__).parent / "configs" / "augmentations.json"
-config = lazy_config.LazyConfig(json_path)
+config = ghostconfig.GhostConfig(json_path)
 
 pipeline_config = config.get("pipeline")
 
@@ -310,7 +311,7 @@ check() passed — all keys present in the JSON.
 
 ## Example 06
 
-Example 06: Using LazyConfig to wire up a training script.
+Example 06: Using GhostConfig to wire up a training script.
 
 This shows a realistic pattern: read all parameters up front, then call
 check() once before any expensive work begins. If anything is missing the
@@ -319,13 +320,13 @@ error surfaces immediately with a ready-to-paste suggestion.
 ### Code
 
 ```python
-"""Example 06: Using LazyConfig to wire up a training script.
+"""Example 06: Using GhostConfig to wire up a training script.
 
 This shows a realistic pattern: read all parameters up front, then call
 check() once before any expensive work begins. If anything is missing the
 error surfaces immediately with a ready-to-paste suggestion.
 """
-import lazy_config
+import ghostconfig
 
 
 def build_model(architecture: str, number_of_layers: int, dropout: float) -> str:
@@ -336,7 +337,7 @@ def build_optimizer(model_name: str, learning_rate: float, weight_decay: float) 
     return f"AdamW(lr={learning_rate}, wd={weight_decay}) on {model_name}"
 
 
-def run_training(config: lazy_config.LazyConfig) -> None:
+def run_training(config: ghostconfig.GhostConfig) -> None:
     model_config = config.get("model")
     architecture = model_config.get("architecture", "resnet18")
     number_of_layers = model_config.get("number_of_layers", 18)
@@ -360,7 +361,7 @@ def run_training(config: lazy_config.LazyConfig) -> None:
     print("Done.")
 
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,

@@ -1,11 +1,11 @@
 """Example 02: Navigating nested sub-configs.
 
-Calling get(key) without a default on a dict value returns a child LazyConfig.
+Calling get(key) without a default on a dict value returns a child GhostConfig.
 You can chain these calls to reach deeply nested leaves.
 """
-import lazy_config
+import ghostconfig
 
-config = lazy_config.LazyConfig({
+config = ghostconfig.GhostConfig({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,

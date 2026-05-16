@@ -1,14 +1,14 @@
 """Example 04: Loading config from a YAML file.
 
-Pass any .yaml or .yml path directly to LazyConfig(). OmegaConf is used under
+Pass any .yaml or .yml path directly to GhostConfig(). OmegaConf is used under
 the hood, so interpolations and anchors work out of the box.
 """
 import pathlib
 
-import lazy_config
+import ghostconfig
 
 yaml_path = pathlib.Path(__file__).parent / "configs" / "training.yaml"
-config = lazy_config.LazyConfig(yaml_path)
+config = ghostconfig.GhostConfig(yaml_path)
 
 experiment_name = config.get("experiment_name", "untitled")
 

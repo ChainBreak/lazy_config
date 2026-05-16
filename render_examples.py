@@ -66,9 +66,9 @@ def format_example_section(path: pathlib.Path, source: str, output: str, exit_co
 
 def build_markdown(sections: list[str]) -> str:
     header = (
-        "# LazyConfig Examples\n\n"
+        "# GhostConfig Examples\n\n"
         "Each example below is a self-contained script demonstrating one "
-        "aspect of `LazyConfig`. The output shown was produced by running "
+        "aspect of `GhostConfig`. The output shown was produced by running "
         "the script directly.\n"
     )
     return header + "\n---\n\n" + "\n---\n\n".join(sections)
