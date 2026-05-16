@@ -4,7 +4,7 @@ The simplest way to get started — no files required.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "learning_rate": 0.001,
     "batch_size": 32,
     "number_of_epochs": 10,

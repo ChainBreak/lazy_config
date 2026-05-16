@@ -8,20 +8,20 @@ import pathlib
 import ghostconfig
 
 yaml_path = pathlib.Path(__file__).parent / "configs" / "training.yaml"
-config = ghostconfig.GhostConfig(yaml_path)
+config = ghostconfig.GhostConfig.create(yaml_path)
 
 experiment_name = config.get("experiment_name", "untitled")
 
-model_config = config.get("model")
+model_config = config["model"]
 architecture = model_config.get("architecture", "resnet18")
 pretrained = model_config.get("pretrained", False)
 
-training_config = config.get("training")
+training_config = config["training"]
 number_of_epochs = training_config.get("number_of_epochs", 10)
 batch_size = training_config.get("batch_size", 32)
 learning_rate = training_config.get("learning_rate", 0.001)
 
-dataset_config = config.get("dataset")
+dataset_config = config["dataset"]
 dataset_name = dataset_config.get("name", "imagenet")
 data_root = dataset_config.get("data_root", "./data")
 

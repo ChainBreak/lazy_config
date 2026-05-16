@@ -9,9 +9,9 @@ import pathlib
 import ghostconfig
 
 json_path = pathlib.Path(__file__).parent / "configs" / "augmentations.json"
-config = ghostconfig.GhostConfig(json_path)
+config = ghostconfig.GhostConfig.create(json_path)
 
-pipeline_config = config.get("pipeline")
+pipeline_config = config["pipeline"]
 
 print("Augmentation pipeline:")
 for step_config in pipeline_config:

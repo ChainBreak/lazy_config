@@ -19,7 +19,7 @@ The simplest way to get started — no files required.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "learning_rate": 0.001,
     "batch_size": 32,
     "number_of_epochs": 10,
@@ -69,7 +69,7 @@ You can chain these calls to reach deeply nested leaves.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,
@@ -82,8 +82,8 @@ config = ghostconfig.GhostConfig({
     },
 })
 
-model_config = config.get("model")
-optimizer_config = config.get("optimizer")
+model_config = config["model"]
+optimizer_config = config["optimizer"]
 
 architecture = model_config.get("architecture", "resnet18")
 number_of_layers = model_config.get("number_of_layers", 18)
@@ -145,14 +145,14 @@ MissingConfigError that lists every missing path and shows exactly what to add.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "batch_size": 64,
     # learning_rate and model block are intentionally absent
 })
 
 batch_size = config.get("batch_size", 16)
 
-model_config = config.get("model")
+model_config = config["model"]
 architecture = model_config.get("architecture", "resnet18")
 number_of_layers = model_config.get("number_of_layers", 18)
 
@@ -180,11 +180,10 @@ layers        : 18  (missing — default used)
 learning_rate : 0.001  (missing — default used)
 
 MissingConfigError caught:
-The following parameters were used but missing from the config.
-Missing keys:
-  model.architecture: 'resnet18'
-  model.number_of_layers: 18
-  learning_rate: 0.001
+The following parameters were used but missing from the config:
+  - model.architecture
+  - model.number_of_layers
+  - learning_rate
 
 Since this started from a dict, you should add:
 
@@ -214,20 +213,20 @@ import pathlib
 import ghostconfig
 
 yaml_path = pathlib.Path(__file__).parent / "configs" / "training.yaml"
-config = ghostconfig.GhostConfig(yaml_path)
+config = ghostconfig.GhostConfig.create(yaml_path)
 
 experiment_name = config.get("experiment_name", "untitled")
 
-model_config = config.get("model")
+model_config = config["model"]
 architecture = model_config.get("architecture", "resnet18")
 pretrained = model_config.get("pretrained", False)
 
-training_config = config.get("training")
+training_config = config["training"]
 number_of_epochs = training_config.get("number_of_epochs", 10)
 batch_size = training_config.get("batch_size", 32)
 learning_rate = training_config.get("learning_rate", 0.001)
 
-dataset_config = config.get("dataset")
+dataset_config = config["dataset"]
 dataset_name = dataset_config.get("name", "imagenet")
 data_root = dataset_config.get("data_root", "./data")
 
@@ -282,9 +281,9 @@ import pathlib
 import ghostconfig
 
 json_path = pathlib.Path(__file__).parent / "configs" / "augmentations.json"
-config = ghostconfig.GhostConfig(json_path)
+config = ghostconfig.GhostConfig.create(json_path)
 
-pipeline_config = config.get("pipeline")
+pipeline_config = config["pipeline"]
 
 print("Augmentation pipeline:")
 for step_config in pipeline_config:
@@ -338,12 +337,12 @@ def build_optimizer(model_name: str, learning_rate: float, weight_decay: float) 
 
 
 def run_training(config: ghostconfig.GhostConfig) -> None:
-    model_config = config.get("model")
+    model_config = config["model"]
     architecture = model_config.get("architecture", "resnet18")
     number_of_layers = model_config.get("number_of_layers", 18)
     dropout = model_config.get("dropout", 0.0)
 
-    optimizer_config = config.get("optimizer")
+    optimizer_config = config["optimizer"]
     learning_rate = optimizer_config.get("learning_rate", 1e-3)
     weight_decay = optimizer_config.get("weight_decay", 0.0)
 
@@ -361,7 +360,7 @@ def run_training(config: ghostconfig.GhostConfig) -> None:
     print("Done.")
 
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,

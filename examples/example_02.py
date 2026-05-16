@@ -5,7 +5,7 @@ You can chain these calls to reach deeply nested leaves.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,
@@ -18,8 +18,8 @@ config = ghostconfig.GhostConfig({
     },
 })
 
-model_config = config.get("model")
-optimizer_config = config.get("optimizer")
+model_config = config["model"]
+optimizer_config = config["optimizer"]
 
 architecture = model_config.get("architecture", "resnet18")
 number_of_layers = model_config.get("number_of_layers", 18)

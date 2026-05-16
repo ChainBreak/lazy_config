@@ -6,14 +6,14 @@ MissingConfigError that lists every missing path and shows exactly what to add.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "batch_size": 64,
     # learning_rate and model block are intentionally absent
 })
 
 batch_size = config.get("batch_size", 16)
 
-model_config = config.get("model")
+model_config = config["model"]
 architecture = model_config.get("architecture", "resnet18")
 number_of_layers = model_config.get("number_of_layers", 18)
 

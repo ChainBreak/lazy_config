@@ -16,12 +16,12 @@ def build_optimizer(model_name: str, learning_rate: float, weight_decay: float) 
 
 
 def run_training(config: ghostconfig.GhostConfig) -> None:
-    model_config = config.get("model")
+    model_config = config["model"]
     architecture = model_config.get("architecture", "resnet18")
     number_of_layers = model_config.get("number_of_layers", 18)
     dropout = model_config.get("dropout", 0.0)
 
-    optimizer_config = config.get("optimizer")
+    optimizer_config = config["optimizer"]
     learning_rate = optimizer_config.get("learning_rate", 1e-3)
     weight_decay = optimizer_config.get("weight_decay", 0.0)
 
@@ -39,7 +39,7 @@ def run_training(config: ghostconfig.GhostConfig) -> None:
     print("Done.")
 
 
-config = ghostconfig.GhostConfig({
+config = ghostconfig.GhostConfig.create({
     "model": {
         "architecture": "resnet50",
         "number_of_layers": 50,
