@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import pathlib
 from collections.abc import Iterator
-from typing import Any, Literal, TypeVar, cast, overload
+from typing import Any, Literal, TypeVar, cast
 
 import omegaconf
 
 from . import errors as errors_module
 from . import tracker as tracker_module
 
-_MISSING = object()
 _NOT_FOUND = object()
 
 T = TypeVar("T")
@@ -58,32 +57,35 @@ class GhostConfig:
             tracker = tracker_module.AccessTracker()
         return cls(data, tracker)
 
-    @overload
-    def get(self, key: str | int) -> GhostConfig: ...
+    def __getitem__(self, key: str | int) -> GhostConfig:
+        """Navigate into a sub-config or ghost.
 
-    @overload
-    def get(self, key: str | int, default: T) -> T: ...
+        Always returns a GhostConfig — use get(key, default) to extract scalar
+        leaf values.
 
-    def get(self, key: str | int, default: Any = _MISSING) -> Any:
+        Raises TypeError if the key resolves to a scalar leaf.
+        """
         full_path = _join_path(self._path_prefix, key)
         value = self._lookup(key)
+        if isinstance(value, (dict, list)):
+            return GhostConfig(value, self._tracker, full_path)
+        else:
+            return GhostConfig(None, self._tracker, full_path)
 
-        if default is _MISSING:
-            if isinstance(value, (dict, list)):
-                return GhostConfig(value, self._tracker, full_path)
-            if value is _NOT_FOUND:
-                return GhostConfig(None, self._tracker, full_path)
-            return value
+
+    def get(self, key: str | int, default: T) -> T:
+        """Retrieve a scalar leaf value, returning default if the key is absent.
+
+        Records the key as missing when it is absent so that check() can surface
+        it. Raises TypeError if the key resolves to a dict sub-config — use
+        config[key] to navigate into sub-configs.
+        """
+        full_path = _join_path(self._path_prefix, key)
+        value = self._lookup(key)
 
         if value is _NOT_FOUND:
             self._tracker.record_missing(full_path, default)
             return default
-
-        if isinstance(value, dict):
-            raise TypeError(
-                f"'{full_path}' is a sub-config, not a leaf value. "
-                f"Call get('{key}') without a default to get a GhostConfig."
-            )
 
         return value
 
@@ -104,8 +106,10 @@ class GhostConfig:
             )
         for index, item in enumerate(self._data):
             child_path = _join_path(self._path_prefix, index)
-            yield GhostConfig(item, self._tracker, child_path)
-         
+            if isinstance(item, (dict, list)):
+                yield GhostConfig(item, self._tracker, child_path)
+            else:
+                yield item
 
     def check(self) -> None:
         """Raise MissingConfigError if any accessed keys were absent from the config."""
