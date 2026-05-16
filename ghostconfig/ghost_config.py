@@ -16,62 +16,47 @@ T = TypeVar("T")
 
 
 class GhostConfig:
-    """A config system that is lazily validated as parameters are used.
-
-    Build a GhostConfig from a YAML file, JSON file, or plain dict, then access
-    parameters with `get()`. Call `check()` at the end of setup to surface any
-    keys that were accessed but absent from the backing config.
-
-    get(key) with no default:
-        - dict value  → GhostConfig (sub-config)
-        - list value  → GhostConfig (iterable; each dict element is a GhostConfig)
-        - scalar leaf → the scalar value directly
-        - missing key → ghost GhostConfig (records missing on subsequent leaf access)
-
-    get(key, default) with a default:
-        - dict value  → TypeError (use get(key) to navigate into sub-configs)
-        - list value  → plain list
-        - scalar leaf → the scalar value
-        - missing key → records missing, returns default
-    """
-
     def __init__(
         self,
-        data: str | pathlib.Path | dict[str, Any] | list[Any] | None = None,
-        tracker: tracker_module.AccessTracker | None = None,
+        data: dict[str, Any] | list[Any] | None,
+        tracker: tracker_module.AccessTracker,
         path_prefix: str = "",
     ) -> None:
+        self._data = data
+        self._tracker = tracker
         self._path_prefix = path_prefix
 
-        if tracker is not None:
-            # Internal construction (sub-configs, ghost configs) — data already processed.
-            self._data: dict[str, Any] | list[Any] | None = cast(
-                "dict[str, Any] | list[Any] | None", data
-            )
-            self._tracker = tracker
-            return
+    @classmethod
+    def create(
+        cls,
+        source: str | pathlib.Path | dict[str, Any] | None = None,
+    ) -> GhostConfig:
+        """Create a GhostConfig from a file path, dict, or nothing.
 
-        # User-facing construction — detect source and run OmegaConf processing.
-        if isinstance(data, (str, pathlib.Path)):
-            path = pathlib.Path(data)
+        - str / Path  → load YAML or JSON from disk
+        - dict        → wrap the dict directly
+        - None        → empty ghost config (all keys missing)
+        """
+        if isinstance(source, (str, pathlib.Path)):
+            path = pathlib.Path(source)
             raw = omegaconf.OmegaConf.load(path)
             source_format: Literal["yaml", "json"] = "json" if path.suffix == ".json" else "yaml"
-            self._data = cast(
+            data: dict[str, Any] | list[Any] | None = cast(
                 "dict[str, Any] | list[Any] | None",
                 omegaconf.OmegaConf.to_container(raw, resolve=True),
             )
-            self._tracker = tracker_module.AccessTracker(source_format, source_path=path)
-        elif isinstance(data, dict):
-            raw = omegaconf.OmegaConf.create(data)
-            self._data = cast(
+            tracker = tracker_module.AccessTracker(source_format, source_path=path)
+        elif isinstance(source, dict):
+            raw = omegaconf.OmegaConf.create(source)
+            data = cast(
                 "dict[str, Any] | list[Any] | None",
                 omegaconf.OmegaConf.to_container(raw, resolve=True),
             )
-            self._tracker = tracker_module.AccessTracker("dict")
+            tracker = tracker_module.AccessTracker("dict")
         else:
-            # list or None — store as-is, default to dict suggestion format.
-            self._data = data
-            self._tracker = tracker_module.AccessTracker()
+            data = None
+            tracker = tracker_module.AccessTracker()
+        return cls(data, tracker)
 
     @overload
     def get(self, key: str | int) -> GhostConfig: ...
