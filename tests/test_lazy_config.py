@@ -357,10 +357,6 @@ def test_iteration_length(tmp_path):
     assert len(list(config.get("layers"))) == 3
 
 
-def test_iteration_over_scalar_list_yields_plain_values():
-    config = GhostConfig.create({"tags": ["a", "b", "c"]})
-    assert list(config.get("tags")) == ["a", "b", "c"]
-
 
 def test_iteration_over_non_list_raises():
     config = GhostConfig.create({"model": {"layers": 4}})

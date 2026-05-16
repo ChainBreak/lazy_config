@@ -87,7 +87,7 @@ class GhostConfig:
 
         return value
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[GhostConfig]:
         """Iterate over a list-backed config, wrapping dict elements as GhostConfig.
 
         Ghost configs (missing key) yield two ghost sub-configs (indices 0 and 1)
@@ -104,10 +104,8 @@ class GhostConfig:
             )
         for index, item in enumerate(self._data):
             child_path = _join_path(self._path_prefix, index)
-            if isinstance(item, (dict, list)):
-                yield GhostConfig(item, self._tracker, child_path)
-            else:
-                yield item
+            yield GhostConfig(item, self._tracker, child_path)
+         
 
     def check(self) -> None:
         """Raise MissingConfigError if any accessed keys were absent from the config."""
