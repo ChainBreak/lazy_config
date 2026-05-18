@@ -449,6 +449,21 @@ def test_ghost_list_iter_records_missing_sub_fields():
     assert "people.0.age" in message
     assert "people.1.age" in message
 
+# -------------------------------------------------------------------------
+# Unused keys
+# -------------------------------------------------------------------------
+
+def test_get_with_non_leaf():
+    config = GhostConfig.create({"model": {"layers": 4}})
+    model = config.get("model", {})
+    assert model == {"layers": 4}
+    assert isinstance(model, dict)
+    assert config._flattened.unused_input_paths == set()
+
+def test_unused_keys():
+    config = GhostConfig.create({"model": {"layers": 4}, "optimizer": {"learning_rate": 0.001}})
+    model = config.get("model", {})
+    assert config._flattened.unused_input_paths == {"optimizer","optimizer.learning_rate"}
 
 # ---------------------------------------------------------------------------
 # Public API surface
