@@ -68,8 +68,12 @@ class FlattenedData:
 
     @property
     def unused_input_paths(self) -> set[str]:
-        """All input paths (leaf and intermediate) that were never accessed."""
-        return {path for path in self._all_paths if path} - self._accessed_paths
+        """Leaf (scalar) input paths that were never accessed."""
+        leaf_paths = {
+            path for path, value in self._all_paths.items()
+            if path and not isinstance(value, (dict, list))
+        }
+        return leaf_paths - self._accessed_paths
 
 
 # ---------------------------------------------------------------------------
