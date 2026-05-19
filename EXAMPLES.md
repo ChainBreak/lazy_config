@@ -203,11 +203,7 @@ print(f"warmup_steps : {warmup_steps}  (missing — default used)")
 print(f"seed         : {seed}  (missing — default used)")
 print()
 
-try:
-    config.check()
-except ghostconfig.MissingConfigError as error:
-    print("MissingConfigError caught:")
-    print(str(error))
+config.check()
 ```
 
 ### Output
@@ -218,7 +214,6 @@ dropout      : 0.0  (missing — default used)
 warmup_steps : 0  (missing — default used)
 seed         : 42  (missing — default used)
 
-MissingConfigError caught:
 The following parameters were used but missing from the config:
   - model.dropout
   - training.warmup_steps

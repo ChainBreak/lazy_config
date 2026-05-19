@@ -26,18 +26,18 @@ def discover_example_paths() -> list[pathlib.Path]:
 
 
 def run_example(path: pathlib.Path) -> tuple[str, int]:
+    example_text = path.read_text()
+    indented_example = textwrap.indent(example_text, "    ")
+    script = f"try:\n{indented_example}\nexcept Exception as exception:\n    print(exception)\n"
     environment = {**os.environ, "PYTHONPATH": str(PROJECT_ROOT)}
     result = subprocess.run(
-        [sys.executable, str(path)],
+        [sys.executable, "-c", script],
         capture_output=True,
         text=True,
         cwd=CONFIGS_DIR,
         env=environment,
     )
-    output = result.stdout
-    if result.returncode != 0:
-        output += result.stderr
-    return output, result.returncode
+    return result.stdout, result.returncode
 
 
 def extract_docstring(source: str) -> str:

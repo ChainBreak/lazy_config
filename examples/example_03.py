@@ -24,8 +24,4 @@ print(f"warmup_steps : {warmup_steps}  (missing — default used)")
 print(f"seed         : {seed}  (missing — default used)")
 print()
 
-try:
-    config.check()
-except ghostconfig.MissingConfigError as error:
-    print("MissingConfigError caught:")
-    print(str(error))
+config.check()
