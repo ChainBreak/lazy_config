@@ -3,9 +3,9 @@
 Indexing a GhostConfig with a string key that holds a dict returns a child
 GhostConfig. Chain these calls to navigate any depth of nesting.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 model_config = config["model"]
 training_config = config["training"]

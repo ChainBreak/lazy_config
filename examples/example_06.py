@@ -4,7 +4,7 @@ This shows a realistic pattern: read all parameters up front via sub-configs,
 then call check() once before any expensive work begins. If anything is missing
 the error surfaces immediately with a ready-to-paste suggestion.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
 
 def build_model(architecture: str, number_of_layers: int) -> str:
@@ -15,7 +15,7 @@ def build_optimizer(model_name: str, optimizer_name: str, learning_rate: float, 
     return f"{optimizer_name}(lr={learning_rate}, wd={weight_decay}) on {model_name}"
 
 
-def run_training(config: ghostconfig.GhostConfig) -> None:
+def run_training(config: GhostConfig) -> None:
     model_config = config["model"]
     architecture = model_config.get("architecture", "resnet18")
     number_of_layers = model_config.get("number_of_layers", 18)
@@ -39,5 +39,5 @@ def run_training(config: ghostconfig.GhostConfig) -> None:
     print("Done.")
 
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 run_training(config)

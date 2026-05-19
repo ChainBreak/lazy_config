@@ -3,9 +3,9 @@
 When a key holds a list of dicts, iterating the returned GhostConfig wraps
 each element as its own GhostConfig so you can call get() on each item.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 pipeline_config = config["augmentations"]["pipeline"]
 

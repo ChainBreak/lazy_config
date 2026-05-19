@@ -3,9 +3,9 @@
 Use a sub-config to group related parameters. Each section of the YAML becomes
 its own GhostConfig, keeping parameter access organised by concern.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 optimizer_config = config["optimizer"]
 optimizer_name = optimizer_config.get("name", "sgd")

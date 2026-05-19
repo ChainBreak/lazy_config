@@ -10,34 +10,11 @@ All examples load from this shared config file:
 experiment_name: cifar10_baseline
 
 model:
-  architecture: resnet18
-  number_of_layers: 18
-  pretrained: true
-
-training:
-  number_of_epochs: 20
-  batch_size: 128
-  learning_rate: 0.01
-  weight_decay: 1.0e-4
-
-optimizer:
-  name: sgd
-  learning_rate: 0.01
-  weight_decay: 1.0e-4
-
-dataset:
-  name: cifar10
-  data_root: ./data
-
-augmentations:
-  pipeline:
-    - name: random_crop
-      size: 224
-    - name: random_horizontal_flip
-      probability: 0.5
-    - name: color_jitter
-      brightness: 0.2
-      contrast: 0.2
+  layers:
+  - channels: 64
+    blocks: 4
+  - channels: 128
+    blocks: 4
 ```
 
 ---
@@ -46,47 +23,28 @@ augmentations:
 
 Example 01: Loading a config from a YAML file.
 
-Pass a filename string to GhostConfig.create() and it resolves the file from
-the current working directory. Access top-level and nested values with get().
-
 ### Code
 
 ```python
 """Example 01: Loading a config from a YAML file.
-
-Pass a filename string to GhostConfig.create() and it resolves the file from
-the current working directory. Access top-level and nested values with get().
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
-experiment_name = config.get("experiment_name", "untitled")
-
-training_config = config["training"]
-number_of_epochs = training_config.get("number_of_epochs", 10)
-batch_size = training_config.get("batch_size", 32)
-learning_rate = training_config.get("learning_rate", 0.001)
-
-print(f"experiment : {experiment_name}")
-print(f"epochs     : {number_of_epochs}")
-print(f"batch size : {batch_size}")
-print(f"lr         : {learning_rate}")
-
+for block in config["model"]["layers"]:
+    channels = block.get('channels', 128)
+    blocks = block.get('blocks', 3)
+    print(f"Channels: {channels}, Blocks: {blocks}")
+  
 config.check()
-print()
-print("check() passed — all keys present in the YAML.")
 ```
 
 ### Output
 
 ```
-experiment : cifar10_baseline
-epochs     : 20
-batch size : 128
-lr         : 0.01
-
-check() passed — all keys present in the YAML.
+Channels: 64, Blocks: 4
+Channels: 128, Blocks: 4
 ```
 
 ---
@@ -106,9 +64,9 @@ GhostConfig. Chain these calls to navigate any depth of nesting.
 Indexing a GhostConfig with a string key that holds a dict returns a child
 GhostConfig. Chain these calls to navigate any depth of nesting.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 model_config = config["model"]
 training_config = config["training"]
@@ -150,18 +108,46 @@ print("check() passed — no missing keys.")
 Model:
   architecture : resnet18
   layers       : 18
-  pretrained   : True
+  pretrained   : False
 
 Training:
-  epochs       : 20
-  batch size   : 128
-  learning rate: 0.01
+  epochs       : 10
+  batch size   : 32
+  learning rate: 0.001
 
 Dataset:
-  name         : cifar10
+  name         : imagenet
   data root    : ./data
+The following parameters were used but missing from the config:
+  - model.architecture
+  - model.number_of_layers
+  - model.pretrained
+  - training.number_of_epochs
+  - training.batch_size
+  - training.learning_rate
+  - dataset.name
+  - dataset.data_root
 
-check() passed — no missing keys.
+Since this started from a yaml (training.yaml), you should add:
+
+model:
+  architecture: resnet18
+  number_of_layers: 18
+  pretrained: false
+training:
+  number_of_epochs: 10
+  batch_size: 32
+  learning_rate: 0.001
+dataset:
+  name: imagenet
+  data_root: ./data
+
+The following keys were present in the config but never accessed:
+  - experiment_name
+  - model.layers.0.blocks
+  - model.layers.0.channels
+  - model.layers.1.blocks
+  - model.layers.1.channels
 ```
 
 ---
@@ -183,9 +169,9 @@ When a key is absent from the config, get(key, default) silently returns the
 default and records the miss. Calling check() at the end raises a
 MissingConfigError that lists every missing path and shows exactly what to add.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 # This key exists in the YAML
 batch_size = config["training"].get("batch_size", 32)
@@ -209,44 +195,32 @@ config.check()
 ### Output
 
 ```
-batch_size   : 128  (present in config)
+batch_size   : 32  (present in config)
 dropout      : 0.0  (missing — default used)
 warmup_steps : 0  (missing — default used)
 seed         : 42  (missing — default used)
 
 The following parameters were used but missing from the config:
+  - training.batch_size
   - model.dropout
   - training.warmup_steps
   - seed
 
 Since this started from a yaml (training.yaml), you should add:
 
+training:
+  batch_size: 32
+  warmup_steps: 0
 model:
   dropout: 0.0
-training:
-  warmup_steps: 0
 seed: 42
 
 The following keys were present in the config but never accessed:
-  - augmentations.pipeline.0.name
-  - augmentations.pipeline.0.size
-  - augmentations.pipeline.1.name
-  - augmentations.pipeline.1.probability
-  - augmentations.pipeline.2.brightness
-  - augmentations.pipeline.2.contrast
-  - augmentations.pipeline.2.name
-  - dataset.data_root
-  - dataset.name
   - experiment_name
-  - model.architecture
-  - model.number_of_layers
-  - model.pretrained
-  - optimizer.learning_rate
-  - optimizer.name
-  - optimizer.weight_decay
-  - training.learning_rate
-  - training.number_of_epochs
-  - training.weight_decay
+  - model.layers.0.blocks
+  - model.layers.0.channels
+  - model.layers.1.blocks
+  - model.layers.1.channels
 ```
 
 ---
@@ -266,9 +240,9 @@ each element as its own GhostConfig so you can call get() on each item.
 When a key holds a list of dicts, iterating the returned GhostConfig wraps
 each element as its own GhostConfig so you can call get() on each item.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 pipeline_config = config["augmentations"]["pipeline"]
 
@@ -286,11 +260,26 @@ print("check() passed — all keys present in the YAML.")
 
 ```
 Augmentation pipeline:
-  - random_crop
-  - random_horizontal_flip
-  - color_jitter
+  - unknown
+  - unknown
+The following parameters were used but missing from the config:
+  - augmentations.pipeline
+  - augmentations.pipeline.0.name
+  - augmentations.pipeline.1.name
 
-check() passed — all keys present in the YAML.
+Since this started from a yaml (training.yaml), you should add:
+
+augmentations:
+  pipeline:
+  - name: unknown
+  - name: unknown
+
+The following keys were present in the config but never accessed:
+  - experiment_name
+  - model.layers.0.blocks
+  - model.layers.0.channels
+  - model.layers.1.blocks
+  - model.layers.1.channels
 ```
 
 ---
@@ -310,9 +299,9 @@ its own GhostConfig, keeping parameter access organised by concern.
 Use a sub-config to group related parameters. Each section of the YAML becomes
 its own GhostConfig, keeping parameter access organised by concern.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 optimizer_config = config["optimizer"]
 optimizer_name = optimizer_config.get("name", "sgd")
@@ -343,13 +332,34 @@ print("check() passed — all keys present in the YAML.")
 Optimizer:
   name         : sgd
   learning rate: 0.01
-  weight decay : 0.0001
+  weight decay : 0.0
 
 Training schedule:
-  epochs       : 20
-  batch size   : 128
+  epochs       : 10
+  batch size   : 32
+The following parameters were used but missing from the config:
+  - optimizer.name
+  - optimizer.learning_rate
+  - optimizer.weight_decay
+  - training.number_of_epochs
+  - training.batch_size
 
-check() passed — all keys present in the YAML.
+Since this started from a yaml (training.yaml), you should add:
+
+optimizer:
+  name: sgd
+  learning_rate: 0.01
+  weight_decay: 0.0
+training:
+  number_of_epochs: 10
+  batch_size: 32
+
+The following keys were present in the config but never accessed:
+  - experiment_name
+  - model.layers.0.blocks
+  - model.layers.0.channels
+  - model.layers.1.blocks
+  - model.layers.1.channels
 ```
 
 ---
@@ -371,7 +381,7 @@ This shows a realistic pattern: read all parameters up front via sub-configs,
 then call check() once before any expensive work begins. If anything is missing
 the error surfaces immediately with a ready-to-paste suggestion.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
 
 def build_model(architecture: str, number_of_layers: int) -> str:
@@ -382,7 +392,7 @@ def build_optimizer(model_name: str, optimizer_name: str, learning_rate: float, 
     return f"{optimizer_name}(lr={learning_rate}, wd={weight_decay}) on {model_name}"
 
 
-def run_training(config: ghostconfig.GhostConfig) -> None:
+def run_training(config: GhostConfig) -> None:
     model_config = config["model"]
     architecture = model_config.get("architecture", "resnet18")
     number_of_layers = model_config.get("number_of_layers", 18)
@@ -406,15 +416,37 @@ def run_training(config: ghostconfig.GhostConfig) -> None:
     print("Done.")
 
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 run_training(config)
 ```
 
 ### Output
 
 ```
-Model     : resnet18-18
-Optimizer : sgd(lr=0.01, wd=0.0001) on resnet18-18
-Training for 20 epochs …
-Done.
+The following parameters were used but missing from the config:
+  - model.architecture
+  - model.number_of_layers
+  - optimizer.name
+  - optimizer.learning_rate
+  - optimizer.weight_decay
+  - training.number_of_epochs
+
+Since this started from a yaml (training.yaml), you should add:
+
+model:
+  architecture: resnet18
+  number_of_layers: 18
+optimizer:
+  name: sgd
+  learning_rate: 0.001
+  weight_decay: 0.0
+training:
+  number_of_epochs: 10
+
+The following keys were present in the config but never accessed:
+  - experiment_name
+  - model.layers.0.blocks
+  - model.layers.0.channels
+  - model.layers.1.blocks
+  - model.layers.1.channels
 ```

@@ -4,9 +4,9 @@ When a key is absent from the config, get(key, default) silently returns the
 default and records the miss. Calling check() at the end raises a
 MissingConfigError that lists every missing path and shows exactly what to add.
 """
-import ghostconfig
+from ghostconfig import GhostConfig
 
-config = ghostconfig.GhostConfig.create("training.yaml")
+config = GhostConfig.create("training.yaml")
 
 # This key exists in the YAML
 batch_size = config["training"].get("batch_size", 32)
