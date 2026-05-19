@@ -1,23 +1,30 @@
-"""Example 05: Loading config from a JSON file and iterating over a list.
+"""Example 05: Reading optimizer settings from a sub-config.
 
-Pass any .json path directly to GhostConfig(). When a key holds a list of
-dicts, iterating the returned GhostConfig wraps each dict element as its own
-GhostConfig so you can call get() on each item.
+Use a sub-config to group related parameters. Each section of the YAML becomes
+its own GhostConfig, keeping parameter access organised by concern.
 """
-import pathlib
-
 import ghostconfig
 
-json_path = pathlib.Path(__file__).parent / "configs" / "augmentations.json"
-config = ghostconfig.GhostConfig.create(json_path)
+config = ghostconfig.GhostConfig.create("training.yaml")
 
-pipeline_config = config["pipeline"]
+optimizer_config = config["optimizer"]
+optimizer_name = optimizer_config.get("name", "sgd")
+learning_rate = optimizer_config.get("learning_rate", 0.01)
+weight_decay = optimizer_config.get("weight_decay", 0.0)
 
-print("Augmentation pipeline:")
-for step_config in pipeline_config:
-    name = step_config.get("name", "unknown")
-    print(f"  - {name}")
+training_config = config["training"]
+number_of_epochs = training_config.get("number_of_epochs", 10)
+batch_size = training_config.get("batch_size", 32)
+
+print("Optimizer:")
+print(f"  name         : {optimizer_name}")
+print(f"  learning rate: {learning_rate}")
+print(f"  weight decay : {weight_decay}")
+print()
+print("Training schedule:")
+print(f"  epochs       : {number_of_epochs}")
+print(f"  batch size   : {batch_size}")
 
 config.check()
 print()
-print("check() passed — all keys present in the JSON.")
+print("check() passed — all keys present in the YAML.")

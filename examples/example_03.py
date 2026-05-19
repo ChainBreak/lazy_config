@@ -1,28 +1,27 @@
 """Example 03: Missing keys return defaults; check() surfaces them all at once.
 
 When a key is absent from the config, get(key, default) silently returns the
-default and records the miss. Calling check() at the end of setup raises a
+default and records the miss. Calling check() at the end raises a
 MissingConfigError that lists every missing path and shows exactly what to add.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig.create({
-    "batch_size": 64,
-    # learning_rate and model block are intentionally absent
-})
+config = ghostconfig.GhostConfig.create("training.yaml")
 
-batch_size = config.get("batch_size", 16)
+# This key exists in the YAML
+batch_size = config["training"].get("batch_size", 32)
 
+# These keys are absent from the YAML — defaults are returned silently
 model_config = config["model"]
-architecture = model_config.get("architecture", "resnet18")
-number_of_layers = model_config.get("number_of_layers", 18)
+dropout = model_config.get("dropout", 0.0)
 
-learning_rate = config.get("learning_rate", 0.001)
+warmup_steps = config["training"].get("warmup_steps", 0)
+seed = config.get("seed", 42)
 
-print(f"batch_size    : {batch_size}  (present in config)")
-print(f"architecture  : {architecture}  (missing — default used)")
-print(f"layers        : {number_of_layers}  (missing — default used)")
-print(f"learning_rate : {learning_rate}  (missing — default used)")
+print(f"batch_size   : {batch_size}  (present in config)")
+print(f"dropout      : {dropout}  (missing — default used)")
+print(f"warmup_steps : {warmup_steps}  (missing — default used)")
+print(f"seed         : {seed}  (missing — default used)")
 print()
 
 try:

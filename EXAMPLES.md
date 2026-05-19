@@ -2,52 +2,91 @@
 
 Each example below is a self-contained script demonstrating one aspect of `GhostConfig`. The output shown was produced by running the script directly.
 
+## Config file: `training.yaml`
+
+All examples load from this shared config file:
+
+```yaml
+experiment_name: cifar10_baseline
+
+model:
+  architecture: resnet18
+  number_of_layers: 18
+  pretrained: true
+
+training:
+  number_of_epochs: 20
+  batch_size: 128
+  learning_rate: 0.01
+  weight_decay: 1.0e-4
+
+optimizer:
+  name: sgd
+  learning_rate: 0.01
+  weight_decay: 1.0e-4
+
+dataset:
+  name: cifar10
+  data_root: ./data
+
+augmentations:
+  pipeline:
+    - name: random_crop
+      size: 224
+    - name: random_horizontal_flip
+      probability: 0.5
+    - name: color_jitter
+      brightness: 0.2
+      contrast: 0.2
+```
+
 ---
 
 ## Example 01
 
-Example 01: Creating a config from a plain Python dict.
+Example 01: Loading a config from a YAML file.
 
-The simplest way to get started — no files required.
+Pass a filename string to GhostConfig.create() and it resolves the file from
+the current working directory. Access top-level and nested values with get().
 
 ### Code
 
 ```python
-"""Example 01: Creating a config from a plain Python dict.
+"""Example 01: Loading a config from a YAML file.
 
-The simplest way to get started — no files required.
+Pass a filename string to GhostConfig.create() and it resolves the file from
+the current working directory. Access top-level and nested values with get().
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig.create({
-    "learning_rate": 0.001,
-    "batch_size": 32,
-    "number_of_epochs": 10,
-    "experiment_name": "baseline",
-})
+config = ghostconfig.GhostConfig.create("training.yaml")
 
-learning_rate = config.get("learning_rate", 0.0)
-batch_size = config.get("batch_size", 16)
-number_of_epochs = config.get("number_of_epochs", 1)
 experiment_name = config.get("experiment_name", "untitled")
 
+training_config = config["training"]
+number_of_epochs = training_config.get("number_of_epochs", 10)
+batch_size = training_config.get("batch_size", 32)
+learning_rate = training_config.get("learning_rate", 0.001)
+
 print(f"experiment : {experiment_name}")
-print(f"learning rate : {learning_rate}")
+print(f"epochs     : {number_of_epochs}")
 print(f"batch size : {batch_size}")
-print(f"epochs : {number_of_epochs}")
+print(f"lr         : {learning_rate}")
 
 config.check()
-print("check() passed — no missing keys.")
+print()
+print("check() passed — all keys present in the YAML.")
 ```
 
 ### Output
 
 ```
-experiment : baseline
-learning rate : 0.001
-batch size : 32
-epochs : 10
-check() passed — no missing keys.
+experiment : cifar10_baseline
+epochs     : 20
+batch size : 128
+lr         : 0.01
+
+check() passed — all keys present in the YAML.
 ```
 
 ---
@@ -56,52 +95,49 @@ check() passed — no missing keys.
 
 Example 02: Navigating nested sub-configs.
 
-Calling get(key) without a default on a dict value returns a child GhostConfig.
-You can chain these calls to reach deeply nested leaves.
+Indexing a GhostConfig with a string key that holds a dict returns a child
+GhostConfig. Chain these calls to navigate any depth of nesting.
 
 ### Code
 
 ```python
 """Example 02: Navigating nested sub-configs.
 
-Calling get(key) without a default on a dict value returns a child GhostConfig.
-You can chain these calls to reach deeply nested leaves.
+Indexing a GhostConfig with a string key that holds a dict returns a child
+GhostConfig. Chain these calls to navigate any depth of nesting.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig.create({
-    "model": {
-        "architecture": "resnet50",
-        "number_of_layers": 50,
-        "dropout": 0.1,
-    },
-    "optimizer": {
-        "name": "adam",
-        "learning_rate": 3e-4,
-        "weight_decay": 1e-5,
-    },
-})
+config = ghostconfig.GhostConfig.create("training.yaml")
 
 model_config = config["model"]
-optimizer_config = config["optimizer"]
+training_config = config["training"]
+dataset_config = config["dataset"]
 
 architecture = model_config.get("architecture", "resnet18")
 number_of_layers = model_config.get("number_of_layers", 18)
-dropout = model_config.get("dropout", 0.0)
+pretrained = model_config.get("pretrained", False)
 
-optimizer_name = optimizer_config.get("name", "sgd")
-learning_rate = optimizer_config.get("learning_rate", 0.01)
-weight_decay = optimizer_config.get("weight_decay", 0.0)
+number_of_epochs = training_config.get("number_of_epochs", 10)
+batch_size = training_config.get("batch_size", 32)
+learning_rate = training_config.get("learning_rate", 0.001)
+
+dataset_name = dataset_config.get("name", "imagenet")
+data_root = dataset_config.get("data_root", "./data")
 
 print("Model:")
 print(f"  architecture : {architecture}")
 print(f"  layers       : {number_of_layers}")
-print(f"  dropout      : {dropout}")
+print(f"  pretrained   : {pretrained}")
 print()
-print("Optimizer:")
-print(f"  name         : {optimizer_name}")
+print("Training:")
+print(f"  epochs       : {number_of_epochs}")
+print(f"  batch size   : {batch_size}")
 print(f"  learning rate: {learning_rate}")
-print(f"  weight decay : {weight_decay}")
+print()
+print("Dataset:")
+print(f"  name         : {dataset_name}")
+print(f"  data root    : {data_root}")
 
 config.check()
 print()
@@ -112,14 +148,18 @@ print("check() passed — no missing keys.")
 
 ```
 Model:
-  architecture : resnet50
-  layers       : 50
-  dropout      : 0.1
+  architecture : resnet18
+  layers       : 18
+  pretrained   : True
 
-Optimizer:
-  name         : adam
-  learning rate: 0.0003
-  weight decay : 1e-05
+Training:
+  epochs       : 20
+  batch size   : 128
+  learning rate: 0.01
+
+Dataset:
+  name         : cifar10
+  data root    : ./data
 
 check() passed — no missing keys.
 ```
@@ -131,7 +171,7 @@ check() passed — no missing keys.
 Example 03: Missing keys return defaults; check() surfaces them all at once.
 
 When a key is absent from the config, get(key, default) silently returns the
-default and records the miss. Calling check() at the end of setup raises a
+default and records the miss. Calling check() at the end raises a
 MissingConfigError that lists every missing path and shows exactly what to add.
 
 ### Code
@@ -140,28 +180,27 @@ MissingConfigError that lists every missing path and shows exactly what to add.
 """Example 03: Missing keys return defaults; check() surfaces them all at once.
 
 When a key is absent from the config, get(key, default) silently returns the
-default and records the miss. Calling check() at the end of setup raises a
+default and records the miss. Calling check() at the end raises a
 MissingConfigError that lists every missing path and shows exactly what to add.
 """
 import ghostconfig
 
-config = ghostconfig.GhostConfig.create({
-    "batch_size": 64,
-    # learning_rate and model block are intentionally absent
-})
+config = ghostconfig.GhostConfig.create("training.yaml")
 
-batch_size = config.get("batch_size", 16)
+# This key exists in the YAML
+batch_size = config["training"].get("batch_size", 32)
 
+# These keys are absent from the YAML — defaults are returned silently
 model_config = config["model"]
-architecture = model_config.get("architecture", "resnet18")
-number_of_layers = model_config.get("number_of_layers", 18)
+dropout = model_config.get("dropout", 0.0)
 
-learning_rate = config.get("learning_rate", 0.001)
+warmup_steps = config["training"].get("warmup_steps", 0)
+seed = config.get("seed", 42)
 
-print(f"batch_size    : {batch_size}  (present in config)")
-print(f"architecture  : {architecture}  (missing — default used)")
-print(f"layers        : {number_of_layers}  (missing — default used)")
-print(f"learning_rate : {learning_rate}  (missing — default used)")
+print(f"batch_size   : {batch_size}  (present in config)")
+print(f"dropout      : {dropout}  (missing — default used)")
+print(f"warmup_steps : {warmup_steps}  (missing — default used)")
+print(f"seed         : {seed}  (missing — default used)")
 print()
 
 try:
@@ -174,116 +213,69 @@ except ghostconfig.MissingConfigError as error:
 ### Output
 
 ```
-batch_size    : 64  (present in config)
-architecture  : resnet18  (missing — default used)
-layers        : 18  (missing — default used)
-learning_rate : 0.001  (missing — default used)
+batch_size   : 128  (present in config)
+dropout      : 0.0  (missing — default used)
+warmup_steps : 0  (missing — default used)
+seed         : 42  (missing — default used)
 
 MissingConfigError caught:
 The following parameters were used but missing from the config:
+  - model.dropout
+  - training.warmup_steps
+  - seed
+
+Since this started from a yaml (training.yaml), you should add:
+
+model:
+  dropout: 0.0
+training:
+  warmup_steps: 0
+seed: 42
+
+The following keys were present in the config but never accessed:
+  - augmentations.pipeline.0.name
+  - augmentations.pipeline.0.size
+  - augmentations.pipeline.1.name
+  - augmentations.pipeline.1.probability
+  - augmentations.pipeline.2.brightness
+  - augmentations.pipeline.2.contrast
+  - augmentations.pipeline.2.name
+  - dataset.data_root
+  - dataset.name
+  - experiment_name
   - model.architecture
   - model.number_of_layers
-  - learning_rate
-
-Since this started from a dict, you should add:
-
-{'model': {'architecture': 'resnet18', 'number_of_layers': 18},
- 'learning_rate': 0.001}
+  - model.pretrained
+  - optimizer.learning_rate
+  - optimizer.name
+  - optimizer.weight_decay
+  - training.learning_rate
+  - training.number_of_epochs
+  - training.weight_decay
 ```
 
 ---
 
 ## Example 04
 
-Example 04: Loading config from a YAML file.
+Example 04: Iterating over a list of sub-configs.
 
-Pass any .yaml or .yml path directly to GhostConfig(). OmegaConf is used under
-the hood, so interpolations and anchors work out of the box.
-
-### Code
-
-```python
-"""Example 04: Loading config from a YAML file.
-
-Pass any .yaml or .yml path directly to GhostConfig(). OmegaConf is used under
-the hood, so interpolations and anchors work out of the box.
-"""
-import pathlib
-
-import ghostconfig
-
-yaml_path = pathlib.Path(__file__).parent / "configs" / "training.yaml"
-config = ghostconfig.GhostConfig.create(yaml_path)
-
-experiment_name = config.get("experiment_name", "untitled")
-
-model_config = config["model"]
-architecture = model_config.get("architecture", "resnet18")
-pretrained = model_config.get("pretrained", False)
-
-training_config = config["training"]
-number_of_epochs = training_config.get("number_of_epochs", 10)
-batch_size = training_config.get("batch_size", 32)
-learning_rate = training_config.get("learning_rate", 0.001)
-
-dataset_config = config["dataset"]
-dataset_name = dataset_config.get("name", "imagenet")
-data_root = dataset_config.get("data_root", "./data")
-
-print(f"Experiment : {experiment_name}")
-print()
-print(f"Model      : {architecture} ({'pretrained' if pretrained else 'from scratch'})")
-print()
-print(f"Training   : {number_of_epochs} epochs, batch={batch_size}, lr={learning_rate}")
-print()
-print(f"Dataset    : {dataset_name} at {data_root}")
-
-config.check()
-print()
-print("check() passed — all keys present in the YAML.")
-```
-
-### Output
-
-```
-Experiment : cifar10_baseline
-
-Model      : resnet18 (pretrained)
-
-Training   : 20 epochs, batch=128, lr=0.01
-
-Dataset    : cifar10 at ./data
-
-check() passed — all keys present in the YAML.
-```
-
----
-
-## Example 05
-
-Example 05: Loading config from a JSON file and iterating over a list.
-
-Pass any .json path directly to GhostConfig(). When a key holds a list of
-dicts, iterating the returned GhostConfig wraps each dict element as its own
-GhostConfig so you can call get() on each item.
+When a key holds a list of dicts, iterating the returned GhostConfig wraps
+each element as its own GhostConfig so you can call get() on each item.
 
 ### Code
 
 ```python
-"""Example 05: Loading config from a JSON file and iterating over a list.
+"""Example 04: Iterating over a list of sub-configs.
 
-Pass any .json path directly to GhostConfig(). When a key holds a list of
-dicts, iterating the returned GhostConfig wraps each dict element as its own
-GhostConfig so you can call get() on each item.
+When a key holds a list of dicts, iterating the returned GhostConfig wraps
+each element as its own GhostConfig so you can call get() on each item.
 """
-import pathlib
-
 import ghostconfig
 
-json_path = pathlib.Path(__file__).parent / "configs" / "augmentations.json"
-config = ghostconfig.GhostConfig.create(json_path)
+config = ghostconfig.GhostConfig.create("training.yaml")
 
-pipeline_config = config["pipeline"]
+pipeline_config = config["augmentations"]["pipeline"]
 
 print("Augmentation pipeline:")
 for step_config in pipeline_config:
@@ -292,7 +284,7 @@ for step_config in pipeline_config:
 
 config.check()
 print()
-print("check() passed — all keys present in the JSON.")
+print("check() passed — all keys present in the YAML.")
 ```
 
 ### Output
@@ -303,7 +295,66 @@ Augmentation pipeline:
   - random_horizontal_flip
   - color_jitter
 
-check() passed — all keys present in the JSON.
+check() passed — all keys present in the YAML.
+```
+
+---
+
+## Example 05
+
+Example 05: Reading optimizer settings from a sub-config.
+
+Use a sub-config to group related parameters. Each section of the YAML becomes
+its own GhostConfig, keeping parameter access organised by concern.
+
+### Code
+
+```python
+"""Example 05: Reading optimizer settings from a sub-config.
+
+Use a sub-config to group related parameters. Each section of the YAML becomes
+its own GhostConfig, keeping parameter access organised by concern.
+"""
+import ghostconfig
+
+config = ghostconfig.GhostConfig.create("training.yaml")
+
+optimizer_config = config["optimizer"]
+optimizer_name = optimizer_config.get("name", "sgd")
+learning_rate = optimizer_config.get("learning_rate", 0.01)
+weight_decay = optimizer_config.get("weight_decay", 0.0)
+
+training_config = config["training"]
+number_of_epochs = training_config.get("number_of_epochs", 10)
+batch_size = training_config.get("batch_size", 32)
+
+print("Optimizer:")
+print(f"  name         : {optimizer_name}")
+print(f"  learning rate: {learning_rate}")
+print(f"  weight decay : {weight_decay}")
+print()
+print("Training schedule:")
+print(f"  epochs       : {number_of_epochs}")
+print(f"  batch size   : {batch_size}")
+
+config.check()
+print()
+print("check() passed — all keys present in the YAML.")
+```
+
+### Output
+
+```
+Optimizer:
+  name         : sgd
+  learning rate: 0.01
+  weight decay : 0.0001
+
+Training schedule:
+  epochs       : 20
+  batch size   : 128
+
+check() passed — all keys present in the YAML.
 ```
 
 ---
@@ -312,47 +363,47 @@ check() passed — all keys present in the JSON.
 
 Example 06: Using GhostConfig to wire up a training script.
 
-This shows a realistic pattern: read all parameters up front, then call
-check() once before any expensive work begins. If anything is missing the
-error surfaces immediately with a ready-to-paste suggestion.
+This shows a realistic pattern: read all parameters up front via sub-configs,
+then call check() once before any expensive work begins. If anything is missing
+the error surfaces immediately with a ready-to-paste suggestion.
 
 ### Code
 
 ```python
 """Example 06: Using GhostConfig to wire up a training script.
 
-This shows a realistic pattern: read all parameters up front, then call
-check() once before any expensive work begins. If anything is missing the
-error surfaces immediately with a ready-to-paste suggestion.
+This shows a realistic pattern: read all parameters up front via sub-configs,
+then call check() once before any expensive work begins. If anything is missing
+the error surfaces immediately with a ready-to-paste suggestion.
 """
 import ghostconfig
 
 
-def build_model(architecture: str, number_of_layers: int, dropout: float) -> str:
-    return f"{architecture}-{number_of_layers} (dropout={dropout})"
+def build_model(architecture: str, number_of_layers: int) -> str:
+    return f"{architecture}-{number_of_layers}"
 
 
-def build_optimizer(model_name: str, learning_rate: float, weight_decay: float) -> str:
-    return f"AdamW(lr={learning_rate}, wd={weight_decay}) on {model_name}"
+def build_optimizer(model_name: str, optimizer_name: str, learning_rate: float, weight_decay: float) -> str:
+    return f"{optimizer_name}(lr={learning_rate}, wd={weight_decay}) on {model_name}"
 
 
 def run_training(config: ghostconfig.GhostConfig) -> None:
     model_config = config["model"]
     architecture = model_config.get("architecture", "resnet18")
     number_of_layers = model_config.get("number_of_layers", 18)
-    dropout = model_config.get("dropout", 0.0)
 
     optimizer_config = config["optimizer"]
+    optimizer_name = optimizer_config.get("name", "sgd")
     learning_rate = optimizer_config.get("learning_rate", 1e-3)
     weight_decay = optimizer_config.get("weight_decay", 0.0)
 
-    number_of_epochs = config.get("number_of_epochs", 10)
+    number_of_epochs = config["training"].get("number_of_epochs", 10)
 
     # Validate before any expensive initialisation
     config.check()
 
-    model = build_model(architecture, number_of_layers, dropout)
-    optimizer = build_optimizer(model, learning_rate, weight_decay)
+    model = build_model(architecture, number_of_layers)
+    optimizer = build_optimizer(model, optimizer_name, learning_rate, weight_decay)
 
     print(f"Model     : {model}")
     print(f"Optimizer : {optimizer}")
@@ -360,27 +411,15 @@ def run_training(config: ghostconfig.GhostConfig) -> None:
     print("Done.")
 
 
-config = ghostconfig.GhostConfig.create({
-    "model": {
-        "architecture": "resnet50",
-        "number_of_layers": 50,
-        "dropout": 0.2,
-    },
-    "optimizer": {
-        "learning_rate": 3e-4,
-        "weight_decay": 1e-5,
-    },
-    "number_of_epochs": 30,
-})
-
+config = ghostconfig.GhostConfig.create("training.yaml")
 run_training(config)
 ```
 
 ### Output
 
 ```
-Model     : resnet50-50 (dropout=0.2)
-Optimizer : AdamW(lr=0.0003, wd=1e-05) on resnet50-50 (dropout=0.2)
-Training for 30 epochs …
+Model     : resnet18-18
+Optimizer : sgd(lr=0.01, wd=0.0001) on resnet18-18
+Training for 20 epochs …
 Done.
 ```

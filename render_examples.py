@@ -3,14 +3,22 @@
 Discovers every examples/example_*.py file (sorted), runs each one,
 captures its output, then writes EXAMPLES.md containing the source code
 and the captured output side-by-side in clean markdown.
+
+Each example is run with cwd set to examples/configs/ so that
+GhostConfig.create("training.yaml") resolves correctly. The project root
+is added to PYTHONPATH so ghostconfig is importable without being installed.
 """
+import os
 import pathlib
 import subprocess
 import sys
 import textwrap
 
 EXAMPLES_DIR = pathlib.Path(__file__).parent / "examples"
+CONFIGS_DIR = EXAMPLES_DIR / "configs"
+YAML_PATH = CONFIGS_DIR / "training.yaml"
 OUTPUT_PATH = pathlib.Path(__file__).parent / "EXAMPLES.md"
+PROJECT_ROOT = pathlib.Path(__file__).parent
 
 
 def discover_example_paths() -> list[pathlib.Path]:
@@ -18,11 +26,13 @@ def discover_example_paths() -> list[pathlib.Path]:
 
 
 def run_example(path: pathlib.Path) -> tuple[str, int]:
+    environment = {**os.environ, "PYTHONPATH": str(PROJECT_ROOT)}
     result = subprocess.run(
         [sys.executable, str(path)],
         capture_output=True,
         text=True,
-        cwd=path.parent,
+        cwd=CONFIGS_DIR,
+        env=environment,
     )
     output = result.stdout
     if result.returncode != 0:
@@ -64,12 +74,15 @@ def format_example_section(path: pathlib.Path, source: str, output: str, exit_co
     )
 
 
-def build_markdown(sections: list[str]) -> str:
+def build_markdown(sections: list[str], yaml_content: str) -> str:
     header = (
         "# GhostConfig Examples\n\n"
         "Each example below is a self-contained script demonstrating one "
         "aspect of `GhostConfig`. The output shown was produced by running "
-        "the script directly.\n"
+        "the script directly.\n\n"
+        "## Config file: `training.yaml`\n\n"
+        "All examples load from this shared config file:\n\n"
+        f"```yaml\n{yaml_content.rstrip()}\n```\n"
     )
     return header + "\n---\n\n" + "\n---\n\n".join(sections)
 
@@ -80,6 +93,8 @@ def main() -> None:
         print(f"No example files found in {EXAMPLES_DIR}")
         sys.exit(1)
 
+    yaml_content = YAML_PATH.read_text()
+
     sections = []
     for path in example_paths:
         print(f"Running {path.name} …", end=" ", flush=True)
@@ -89,7 +104,7 @@ def main() -> None:
         print(status)
         sections.append(format_example_section(path, source, output, exit_code))
 
-    markdown = build_markdown(sections)
+    markdown = build_markdown(sections, yaml_content)
     OUTPUT_PATH.write_text(markdown)
     print(f"\nWrote {OUTPUT_PATH}")
 
