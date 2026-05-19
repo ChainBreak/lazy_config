@@ -356,17 +356,20 @@ def test_iteration_length(tmp_path):
     assert len(list(config["layers"])) == 3
 
 
-
-def test_iteration_over_non_list_raises():
-    config = GhostConfig.create({"model": {"layers": 4}})
-    with pytest.raises(TypeError):
-        list(config["model"])
-
-
 def test_getitem_on_scalar_still_returns_ghost_config():
     config = GhostConfig.create({"learning_rate": 0.001})
     assert isinstance(config["learning_rate"], GhostConfig)
 
+def test_getitem_counter():
+    num_people = 10
+    data = {"people": [{"name": f"Person {i}"} for i in range(num_people)]}
+    config = GhostConfig.create(data)
+    
+    counter = 0
+    for _ in config["people"]:
+        counter += 1
+    assert counter == num_people
+    
 
 # ---------------------------------------------------------------------------
 # Lists — iteration recording missing sub-fields

@@ -65,6 +65,7 @@ class GhostConfig:
         full_path = _join_path(self._path_prefix, key)
         return GhostConfig(self._flattened, full_path)
 
+
     def get(self, key: str | int, default: T) -> T:
         """Retrieve a value, returning default if the key is absent.
 
@@ -74,31 +75,19 @@ class GhostConfig:
         full_path = _join_path(self._path_prefix, key)
         return cast(T, self._flattened.retrieve(full_path, default))
 
-    def __iter__(self) -> Iterator[GhostConfig]:
-        """Iterate over a list-backed config, wrapping dict elements as GhostConfig.
 
-        Ghost configs (missing key) yield two ghost sub-configs (indices 0 and 1)
-        so that field accesses inside the loop record the correct missing paths.
-        Dict-backed configs are not iterable and raise TypeError.
-        """
+    def __iter__(self) -> Iterator[GhostConfig]:
         data = self._flattened.retrieve(self._path_prefix, _NOT_FOUND)
 
-        if data is _NOT_FOUND:
-            for index in range(2):
-                yield GhostConfig(self._flattened, _join_path(self._path_prefix, index))
-            return
+        if isinstance(data, list):
+            num_items = len(data)
+        else:
+            num_items = 2
 
-        if not isinstance(data, list):
-            raise TypeError(
-                f"Config at '{self._path_prefix}' is not a list and cannot be iterated."
-            )
-
-        for index, item in enumerate(data):
+        for index in range(num_items):
             child_path = _join_path(self._path_prefix, index)
-            if isinstance(item, (dict, list)):
-                yield GhostConfig(self._flattened, child_path)
-            else:
-                yield item
+            yield GhostConfig(self._flattened, child_path)
+
 
     def check(self) -> None:
         """Raise MissingConfigError if any accessed keys were absent from the config."""
