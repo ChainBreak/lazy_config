@@ -4,31 +4,33 @@ from . import flattened_data as flattened_data_module
 from . import suggestions as suggestions_module
 
 
-class MissingConfigError(ValueError):
-    """Raised by `GhostConfig.check()` when accessed keys were absent from the config."""
+class ConfigMismatchError(ValueError):
+    """Raised by `GhostConfig.check()` when keys were missing from or unused in the config."""
 
     def __init__(self, flattened: flattened_data_module.FlattenedData) -> None:
-        suggestion = suggestions_module.format_suggestion(
-            flattened.get_missing_keys(), flattened.source_format
-        )
-        source_description = _describe_source(flattened)
-        missing_paths = "\n".join(f"  - {path}" for path in flattened.get_missing_keys())
-        message = (
-            f"The following parameters were used but missing from the config:\n"
-            f"{missing_paths}\n\n"
-            f"Since this started from {source_description}, you should add:\n\n"
-            f"{suggestion}"
-        )
+        parts: list[str] = []
+
+        missing = flattened.get_missing_keys()
+        if missing:
+            suggestion = suggestions_module.format_suggestion(missing, flattened.source_format)
+            source_description = _describe_source(flattened)
+            missing_paths = "\n".join(f"  - {path}" for path in missing)
+            parts.append(
+                f"The following parameters were used but missing from the config:\n"
+                f"{missing_paths}\n\n"
+                f"Since this started from {source_description}, you should add:\n\n"
+                f"{suggestion}"
+            )
 
         unused = flattened.get_unused_keys()
         if unused:
             unused_paths = "\n".join(f"  - {path}" for path in sorted(unused))
-            message += (
-                f"\nThe following keys were present in the config but never accessed:\n"
+            parts.append(
+                f"The following keys were present in the config but never accessed:\n"
                 f"{unused_paths}"
             )
 
-        super().__init__(message)
+        super().__init__("\n".join(parts))
 
 
 def _describe_source(flattened: flattened_data_module.FlattenedData) -> str:

@@ -46,6 +46,8 @@ config.check()
 ```
 Channels: 64, Blocks: 4
 Channels: 128, Blocks: 4
+The following keys were present in the config but never accessed:
+  - experiment_name
 ```
 
 ---

@@ -19,8 +19,8 @@ class GhostConfig:
 
     Create an instance with `GhostConfig.create()`, navigate into nested values
     with `[]` or retrieve scalars with `.get()`, then call `.check()` once at
-    the end to raise a single `MissingConfigError` if any keys were absent from
-    the underlying config.
+    the end to raise a single `ConfigMismatchError` if any keys were absent from
+    or unused in the underlying config.
     """
 
     def __init__(
@@ -105,9 +105,9 @@ class GhostConfig:
 
 
     def check(self) -> None:
-        """Raise MissingConfigError if any accessed keys were absent from the config."""
-        if self._flattened.get_missing_keys():
-            raise errors_module.MissingConfigError(self._flattened)
+        """Raise ConfigMismatchError if any keys were missing from or unused in the config."""
+        if self._flattened.get_missing_keys() or self._flattened.get_unused_keys():
+            raise errors_module.ConfigMismatchError(self._flattened)
 
 
 def _join_path(prefix: str, key: str | int) -> str:

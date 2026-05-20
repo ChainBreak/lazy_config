@@ -7,7 +7,7 @@ import textwrap
 import pytest
 
 import ghostconfig
-from ghostconfig import GhostConfig, MissingConfigError
+from ghostconfig import ConfigMismatchError, GhostConfig
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -55,7 +55,7 @@ def test_from_dict_check_passes_when_nothing_missing():
 def test_from_dict_check_raises_with_dict_suggestion():
     config = GhostConfig.create({})
     config.get("learning_rate", 0.001)
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "learning_rate" in message
@@ -67,7 +67,7 @@ def test_from_dict_empty_source_suggests_full_structure():
     config = GhostConfig.create({})
     config["model"].get("layers", 4)
     config["model"].get("block", "resnet")
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "model" in message
@@ -128,7 +128,7 @@ def test_from_yaml_check_raises_with_yaml_suggestion(tmp_path):
     path = write_yaml(tmp_path, "layers: 4\n")
     config = GhostConfig.create(path)
     config.get("learning_rate", 0.001)
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "yaml" in message
@@ -143,7 +143,7 @@ def test_from_yaml_check_raises_with_merged_suggestion_for_multiple_missing(tmp_
     training_config = config["training"]
     training_config.get("learning_rate", 0.001)
     training_config.get("batch_size", 32)
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "training" in message
@@ -172,7 +172,7 @@ def test_ghost_chain_returns_default_leaf():
 def test_ghost_chain_records_full_dotted_path():
     config = GhostConfig.create({})
     config["training"].get("learning_rate", 0.001)
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "training.learning_rate" in message or (
@@ -184,7 +184,7 @@ def test_ghost_chain_preserves_first_default_on_repeated_access():
     config = GhostConfig.create({})
     config.get("lr", 0.1)
     config.get("lr", 0.9)
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "0.1" in message
@@ -200,7 +200,7 @@ def test_from_json_check_raises_with_json_suggestion(tmp_path):
     path = write_json(tmp_path, {"layers": 4})
     config = GhostConfig.create(path)
     config.get("learning_rate", 0.001)
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "json" in message
@@ -392,7 +392,7 @@ def test_iteration_over_real_list_records_missing_sub_fields(tmp_path):
         age = person.get("age", 42)
         assert age == 42
 
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "people.0.age" in message
@@ -411,7 +411,7 @@ def test_ghost_list_index_access_records_correct_paths():
         age = person.get("age", 42)
         assert age == 42
 
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "people.0.age" in message
@@ -432,7 +432,7 @@ def test_get_with_list_default_records_key_as_missing():
     result = config.get("people", [])
     assert result == []
 
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "people" in message
@@ -446,7 +446,7 @@ def test_ghost_list_iter_records_missing_sub_fields():
         age = person.get("age", 42)
         assert age == 42
 
-    with pytest.raises(MissingConfigError) as exc_info:
+    with pytest.raises(ConfigMismatchError) as exc_info:
         config.check()
     message = str(exc_info.value)
     assert "people.0.age" in message
@@ -469,6 +469,30 @@ def test_unused_keys():
     _ = config.get("model", {})
     assert config._flattened.get_unused_keys() == {"optimizer.learning_rate"}
 
+def test_check_raises_unused_config_error_when_keys_unused():
+    config = GhostConfig.create({"model": {"layers": 4}, "optimizer": {"learning_rate": 0.001}})
+    _ = config.get("model", {})
+    with pytest.raises(ghostconfig.ConfigMismatchError) as exc_info:
+        config.check()
+    assert "optimizer.learning_rate" in str(exc_info.value)
+
+
+def test_check_does_not_raise_when_all_keys_used():
+    config = GhostConfig.create({"model": {"layers": 4}})
+    _ = config.get("model", {})
+    config.check()
+
+
+def test_check_missing_error_includes_unused_keys():
+    """When both missing and unused keys exist, ConfigMismatchError surfaces both."""
+    config = GhostConfig.create({"extra": "value"})
+    _ = config.get("missing_key", "default")
+    with pytest.raises(ghostconfig.ConfigMismatchError) as exc_info:
+        config.check()
+    assert "missing_key" in str(exc_info.value)
+    assert "extra" in str(exc_info.value)
+
+
 # ---------------------------------------------------------------------------
 # Public API surface
 # ---------------------------------------------------------------------------
@@ -478,5 +502,5 @@ def test_module_exports_ghost_config():
     assert hasattr(ghostconfig, "GhostConfig")
 
 
-def test_module_exports_missing_config_error():
-    assert hasattr(ghostconfig, "MissingConfigError")
+def test_module_exports_config_mismatch_error():
+    assert hasattr(ghostconfig, "ConfigMismatchError")
