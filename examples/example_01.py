@@ -4,6 +4,8 @@ from ghostconfig import GhostConfig
 
 config = GhostConfig.create("training.yaml")
 
+print(f"Experiment name: {config.get('experiment_name', '')}")
+
 # Get a sub-config for the model
 model_config = config["model"]
 

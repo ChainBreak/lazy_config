@@ -12,25 +12,29 @@ class ConfigMismatchError(ValueError):
 
         missing = flattened.get_missing_keys()
         if missing:
-            suggestion = suggestions_module.format_suggestion(missing, flattened.source_format)
-            source_description = _describe_source(flattened)
             missing_paths = "\n".join(f"  - {path}" for path in missing)
             parts.append(
-                f"The following parameters were used but missing from the config:\n"
-                f"{missing_paths}\n\n"
-                f"Since this started from {source_description}, you should add:\n\n"
-                f"{suggestion}"
+                f"Missing keys:\n"
+                f"{missing_paths}"
             )
 
         unused = flattened.get_unused_keys()
         if unused:
             unused_paths = "\n".join(f"  - {path}" for path in sorted(unused))
             parts.append(
-                f"The following keys were present in the config but never accessed:\n"
+                f"Unused keys:\n"
                 f"{unused_paths}"
             )
 
-        super().__init__("\n".join(parts))
+        if missing:
+            suggestion = suggestions_module.format_suggestion(missing, flattened.source_format)
+            source_description = _describe_source(flattened)
+            parts.append(
+                f"Since this started from {source_description}, you should add:\n\n"
+                f"{suggestion}"
+            )
+
+        super().__init__("\n\n".join(parts))
 
 
 def _describe_source(flattened: flattened_data_module.FlattenedData) -> str:
