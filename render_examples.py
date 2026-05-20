@@ -70,22 +70,21 @@ def format_example_section(path: pathlib.Path, source: str, output: str, exit_co
         output_label = "Output"
 
     return (
-        f"## {title}\n"
+        f"### {title}\n"
         f"{description}\n"
-        f"### Code\n\n"
         f"```python\n{code.rstrip()}\n```\n\n"
-        f"### {output_label}\n\n"
+        f"**{output_label}**\n\n"
         f"```\n{output_block}\n```\n"
     )
 
 
 def build_markdown(sections: list[str], yaml_content: str) -> str:
     header = (
-        "# GhostConfig Examples\n\n"
+        "## Usage\n\n"
         "Each example below is a self-contained script demonstrating one "
         "aspect of `GhostConfig`. The output shown was produced by running "
         "the script directly.\n\n"
-        "## Config file: `training.yaml`\n\n"
+        "### Config file: `training.yaml`\n\n"
         "All examples load from this shared config file:\n\n"
         f"```yaml\n{yaml_content.rstrip()}\n```\n"
     )

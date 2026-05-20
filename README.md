@@ -1,71 +1,105 @@
-# lazy_config
-
-A config system that is lazily validated as parameters are used.
+# Ghost Config
 
 ## Installation
 
 ```bash
-pip install lazy_config
+pip install ghostconfig
 ```
 
 ## Usage
 
-### Creating a config
+Each example below is a self-contained script demonstrating one aspect of `GhostConfig`. The output shown was produced by running the script directly.
 
-```python
-from lazy_config import LazyConfig
+### Config file: `training.yaml`
 
-# From a YAML file (OmegaConf interpolations supported)
-config = LazyConfig.from_yaml("path/to/config.yaml")
+All examples load from this shared config file:
 
-# From a JSON file
-config = LazyConfig.from_json("path/to/config.json")
+```yaml
+experiment_name: cifar10_baseline
 
-# From a plain Python dict
-config = LazyConfig.from_dict({"num_epochs": 10, "learning_rate": 0.001})
+model:
+  layers:
+  - channels: 64
+    blocks: 4
+  - channels: 128
+    blocks: 4
 ```
 
-### Reading values
+---
 
-`get(key)` with no default returns a `LazyConfig` sub-config (real or ghost).
-`get(key, default)` returns the leaf value (type inferred from the default).
+### Example 01
 
-```python
-# Given config.yaml:
-# model:
-#   layers: 4
-#   block: resnet
-# dataset:
-#   path: my/data/
-#   augmentations: [crop]
-
-model_config = config.get("model")    # LazyConfig
-layers = model_config.get("layers", 1)  # 4
-
-# Accessing a key that doesn't exist in the YAML is fine at this point —
-# a "ghost" LazyConfig is returned and the access is recorded.
-training_config = config.get("training")
-learning_rate = training_config.get("learning_rate", 0.001)  # returns 0.001
-```
-
-### Validating at setup time
-
-Call `check()` once all parameters have been read. It raises `MissingConfigError`
-with a suggestion showing exactly what to add to your config file.
+Standard usage of GhostConfig.
 
 ```python
+from ghostconfig import GhostConfig
+
+config = GhostConfig.create("training.yaml")
+
+# Get a sub-config for the model
+model_config = config["model"]
+
+# Iterate over the layers in the model
+for block in model_config["layers"]:
+    channels = block.get("channels", 128)
+    blocks = block.get("blocks", 3)
+    print(f"Channels: {channels}, Blocks: {blocks}")
+
+# Check that all required keys are present
 config.check()
-# MissingConfigError:
-# The following parameters were used but missing from the config.
-# Since this started from a yaml (path/to/config.yaml), you should add:
-#
-# training:
-#   learning_rate: 0.001
 ```
 
-If multiple keys are missing they are merged into a single suggestion block.
-The format matches the source: YAML for `from_yaml`, JSON for `from_json`,
-and a Python dict literal for `from_dict`.
+**Output**
+
+```
+Channels: 64, Blocks: 4
+Channels: 128, Blocks: 4
+```
+
+---
+
+### Example 02
+
+No missing errors are raised until check() is called.
+
+```python
+from ghostconfig import GhostConfig
+
+config = GhostConfig.create("training.yaml")
+
+# Get a sub-config for the model
+model_config = config["model"]
+
+# Iterate over the layers in the model
+for block in model_config["layers"]:
+    block_type = block.get("type", "conv")
+    print(f"Block type: {block_type}")
+
+# Check that all required keys are present
+config.check()
+```
+
+**Output**
+
+```
+Block type: conv
+Block type: conv
+The following parameters were used but missing from the config:
+  - model.layers.0.type
+  - model.layers.1.type
+
+Since this started from a yaml (training.yaml), you should add:
+
+model:
+  layers:
+  - type: conv
+  - type: conv
+
+The following keys were present in the config but never accessed:
+  - experiment_name
+```
+
+
 
 ## Development
 
@@ -105,21 +139,13 @@ pip install build twine
 ### Build the distribution
 
 ```bash
+rm dist/*
 python -m build
 ```
 
 This creates a `dist/` directory containing a `.whl` and `.tar.gz` file.
 
 ### Upload to PyPI
-
-First, upload to [TestPyPI](https://test.pypi.org/) to verify everything looks correct:
-
-```bash
-twine upload --repository testpypi dist/*
-```
-
-When ready, upload to the real PyPI:
-
 ```bash
 twine upload dist/*
 ```

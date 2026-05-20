@@ -1,8 +1,8 @@
-# GhostConfig Examples
+## Usage
 
 Each example below is a self-contained script demonstrating one aspect of `GhostConfig`. The output shown was produced by running the script directly.
 
-## Config file: `training.yaml`
+### Config file: `training.yaml`
 
 All examples load from this shared config file:
 
@@ -19,11 +19,9 @@ model:
 
 ---
 
-## Example 01
+### Example 01
 
 Standard usage of GhostConfig.
-
-### Code
 
 ```python
 from ghostconfig import GhostConfig
@@ -43,7 +41,7 @@ for block in model_config["layers"]:
 config.check()
 ```
 
-### Output
+**Output**
 
 ```
 Channels: 64, Blocks: 4
@@ -52,11 +50,9 @@ Channels: 128, Blocks: 4
 
 ---
 
-## Example 02
+### Example 02
 
 No missing errors are raised until check() is called.
-
-### Code
 
 ```python
 from ghostconfig import GhostConfig
@@ -75,7 +71,7 @@ for block in model_config["layers"]:
 config.check()
 ```
 
-### Output
+**Output**
 
 ```
 Block type: conv
