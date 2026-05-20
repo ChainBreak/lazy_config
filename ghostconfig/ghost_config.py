@@ -15,6 +15,14 @@ T = TypeVar("T")
 
 
 class GhostConfig:
+    """A lazy config wrapper that defers all key lookups and tracks missing keys.
+
+    Create an instance with `GhostConfig.create()`, navigate into nested values
+    with `[]` or retrieve scalars with `.get()`, then call `.check()` once at
+    the end to raise a single `MissingConfigError` if any keys were absent from
+    the underlying config.
+    """
+
     def __init__(
         self,
         flattened: flattened_data_module.FlattenedData,
@@ -77,6 +85,13 @@ class GhostConfig:
 
 
     def __iter__(self) -> Iterator[GhostConfig]:
+        """Iterate over indexed children, yielding a GhostConfig per index.
+
+        When the underlying value is a list, iteration matches the list length.
+        When the path is absent or non-list (ghost mode), two iterations are
+        yielded so that common two-value tuple unpacking works without raising
+        an error even when the key is missing from the config.
+        """
         data = self._flattened.retrieve(self._path_prefix, _NOT_FOUND)
 
         if isinstance(data, list):

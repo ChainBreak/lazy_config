@@ -43,6 +43,11 @@ def format_suggestion(
     missing: dict[str, Any],
     source_format: Literal["yaml", "json", "dict"],
 ) -> str:
+    """Return a formatted snippet showing how to add the missing keys.
+
+    Renders as YAML for YAML sources, JSON for JSON sources, or a Python
+    pprint representation for dict sources.
+    """
     nested = build_nested(missing)
     if source_format == "yaml":
         return cast(str, yaml.safe_dump(nested, sort_keys=False, default_flow_style=False))

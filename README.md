@@ -128,6 +128,12 @@ To run with verbose output:
 pytest -v
 ```
 
+### Linting and Type Checking
+
+```bash
+ruff check && mypy ghostconfig/ && pytest
+```
+
 ## Building and Publishing to PyPI
 
 ### Prerequisites
