@@ -80,8 +80,8 @@ config.check()
 Block type: conv
 Block type: conv
 Missing keys:
-  - model.layers.0.type
-  - model.layers.1.type
+  - model.layers.0.type  (called at <string>:13)
+  - model.layers.1.type  (called at <string>:13)
 
 Unused keys:
   - experiment_name

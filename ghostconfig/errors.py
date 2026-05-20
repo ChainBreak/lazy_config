@@ -12,11 +12,17 @@ class ConfigMismatchError(ValueError):
 
         missing = flattened.get_missing_keys()
         if missing:
-            missing_paths = "\n".join(f"  - {path}" for path in missing)
-            parts.append(
-                f"Missing keys:\n"
-                f"{missing_paths}"
-            )
+            locations = flattened.get_missing_key_locations()
+            missing_lines = []
+            for path in missing:
+                location = locations.get(path)
+                if location is not None:
+                    file_path, line_number = location
+                    missing_lines.append(f"  - {path}  (called at {file_path}:{line_number})")
+                else:
+                    missing_lines.append(f"  - {path}")
+            missing_paths = "\n".join(missing_lines)
+            parts.append(f"Missing keys:\n{missing_paths}")
 
         unused = flattened.get_unused_keys()
         if unused:

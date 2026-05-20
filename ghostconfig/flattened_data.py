@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import pathlib
 from typing import Any, Literal
 
@@ -34,6 +35,7 @@ class FlattenedData:
         self._all_paths: dict[str, Any] = {}
         self._accessed_paths: set[str] = set()
         self._missing_keys: dict[str, Any] = {}
+        self._missing_key_locations: dict[str, tuple[str, int]] = {}
 
         if data is not None:
             _flatten_recursive(data, "", self._all_paths)
@@ -53,6 +55,9 @@ class FlattenedData:
         if value is _NOT_FOUND:
             if dotted_path not in self._missing_keys:
                 self._missing_keys[dotted_path] = default
+                caller = _find_caller_outside_package()
+                if caller is not None:
+                    self._missing_key_locations[dotted_path] = caller
             return default
 
         self._accessed_paths.add(dotted_path)
@@ -68,6 +73,10 @@ class FlattenedData:
         """Return paths that were requested but absent from the input, mapped to their defaults."""
         return self._missing_keys
 
+    def get_missing_key_locations(self) -> dict[str, tuple[str, int]]:
+        """Return the call-site (file path, line number) for each path requested but absent."""
+        return self._missing_key_locations
+
     def get_unused_keys(self) -> set[str]:
         """Return leaf (scalar) input paths that were never accessed."""
         leaf_paths = {
@@ -80,6 +89,20 @@ class FlattenedData:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _find_caller_outside_package() -> tuple[str, int] | None:
+    """Walk the call stack and return the first (file, line) outside this package.
+
+    This identifies the user's code that triggered a `get()` or `__getitem__`
+    call, skipping all internal ghostconfig frames.
+    """
+    package_directory = str(pathlib.Path(__file__).parent.resolve())
+    for frame_info in inspect.stack():
+        caller_file = str(pathlib.Path(frame_info.filename).resolve())
+        if not caller_file.startswith(package_directory):
+            return frame_info.filename, frame_info.lineno
+    return None
 
 
 def _flatten_recursive(
