@@ -40,22 +40,27 @@ def run_example(path: pathlib.Path) -> tuple[str, int]:
     return result.stdout, result.returncode
 
 
-def extract_docstring(source: str) -> str:
-    """Return the first triple-quoted docstring, stripped of indentation."""
+def split_docstring(source: str) -> tuple[str, str]:
+    """Split source into (docstring, remaining_code).
+
+    Returns the first triple-quoted docstring (dedented) and the source with
+    that docstring removed. If no docstring is found, returns ("", source).
+    """
     stripped = source.lstrip()
     for quote in ('"""', "'''"):
         if stripped.startswith(quote):
             end = stripped.index(quote, len(quote))
-            raw = stripped[len(quote):end]
-            return textwrap.dedent(raw).strip()
-    return ""
+            docstring = textwrap.dedent(stripped[len(quote):end]).strip()
+            remaining_code = stripped[end + len(quote):].lstrip("\n")
+            return docstring, remaining_code
+    return "", source
 
 
 def format_example_section(path: pathlib.Path, source: str, output: str, exit_code: int) -> str:
     number = path.stem  # e.g. "example_01"
     title = number.replace("_", " ").title()
 
-    docstring = extract_docstring(source)
+    docstring, code = split_docstring(source)
     description = f"\n{docstring}\n" if docstring else ""
 
     output_block = output.rstrip()
@@ -68,7 +73,7 @@ def format_example_section(path: pathlib.Path, source: str, output: str, exit_co
         f"## {title}\n"
         f"{description}\n"
         f"### Code\n\n"
-        f"```python\n{source.rstrip()}\n```\n\n"
+        f"```python\n{code.rstrip()}\n```\n\n"
         f"### {output_label}\n\n"
         f"```\n{output_block}\n```\n"
     )

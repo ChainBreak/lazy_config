@@ -26,8 +26,6 @@ Example 01: Loading a config from a YAML file.
 ### Code
 
 ```python
-"""Example 01: Loading a config from a YAML file.
-"""
 from ghostconfig import GhostConfig
 
 config = GhostConfig.create("training.yaml")
@@ -59,11 +57,6 @@ GhostConfig. Chain these calls to navigate any depth of nesting.
 ### Code
 
 ```python
-"""Example 02: Navigating nested sub-configs.
-
-Indexing a GhostConfig with a string key that holds a dict returns a child
-GhostConfig. Chain these calls to navigate any depth of nesting.
-"""
 from ghostconfig import GhostConfig
 
 config = GhostConfig.create("training.yaml")
@@ -163,12 +156,6 @@ MissingConfigError that lists every missing path and shows exactly what to add.
 ### Code
 
 ```python
-"""Example 03: Missing keys return defaults; check() surfaces them all at once.
-
-When a key is absent from the config, get(key, default) silently returns the
-default and records the miss. Calling check() at the end raises a
-MissingConfigError that lists every missing path and shows exactly what to add.
-"""
 from ghostconfig import GhostConfig
 
 config = GhostConfig.create("training.yaml")
@@ -235,11 +222,6 @@ each element as its own GhostConfig so you can call get() on each item.
 ### Code
 
 ```python
-"""Example 04: Iterating over a list of sub-configs.
-
-When a key holds a list of dicts, iterating the returned GhostConfig wraps
-each element as its own GhostConfig so you can call get() on each item.
-"""
 from ghostconfig import GhostConfig
 
 config = GhostConfig.create("training.yaml")
@@ -294,11 +276,6 @@ its own GhostConfig, keeping parameter access organised by concern.
 ### Code
 
 ```python
-"""Example 05: Reading optimizer settings from a sub-config.
-
-Use a sub-config to group related parameters. Each section of the YAML becomes
-its own GhostConfig, keeping parameter access organised by concern.
-"""
 from ghostconfig import GhostConfig
 
 config = GhostConfig.create("training.yaml")
@@ -375,12 +352,6 @@ the error surfaces immediately with a ready-to-paste suggestion.
 ### Code
 
 ```python
-"""Example 06: Using GhostConfig to wire up a training script.
-
-This shows a realistic pattern: read all parameters up front via sub-configs,
-then call check() once before any expensive work begins. If anything is missing
-the error surfaces immediately with a ready-to-paste suggestion.
-"""
 from ghostconfig import GhostConfig
 
 
