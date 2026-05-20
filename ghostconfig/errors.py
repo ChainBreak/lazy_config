@@ -9,10 +9,10 @@ class MissingConfigError(ValueError):
 
     def __init__(self, flattened: flattened_data_module.FlattenedData) -> None:
         suggestion = suggestions_module.format_suggestion(
-            flattened.missing, flattened.source_format
+            flattened.get_missing_keys(), flattened.source_format
         )
         source_description = _describe_source(flattened)
-        missing_paths = "\n".join(f"  - {path}" for path in flattened.missing)
+        missing_paths = "\n".join(f"  - {path}" for path in flattened.get_missing_keys())
         message = (
             f"The following parameters were used but missing from the config:\n"
             f"{missing_paths}\n\n"
@@ -20,7 +20,7 @@ class MissingConfigError(ValueError):
             f"{suggestion}"
         )
 
-        unused = flattened.unused_input_paths
+        unused = flattened.get_unused_keys()
         if unused:
             unused_paths = "\n".join(f"  - {path}" for path in sorted(unused))
             message += (

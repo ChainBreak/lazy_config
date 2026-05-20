@@ -106,7 +106,7 @@ class GhostConfig:
 
     def check(self) -> None:
         """Raise MissingConfigError if any accessed keys were absent from the config."""
-        if self._flattened.missing:
+        if self._flattened.get_missing_keys():
             raise errors_module.MissingConfigError(self._flattened)
 
 

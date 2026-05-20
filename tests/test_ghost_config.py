@@ -461,13 +461,13 @@ def test_get_with_non_leaf():
     model = config.get("model", {})
     assert model == {"layers": 4}
     assert isinstance(model, dict)
-    assert config._flattened.unused_input_paths == set()
+    assert config._flattened.get_unused_keys() == set()
 
 def test_unused_keys():
     """Test that only leafs are reported as unused."""
     config = GhostConfig.create({"model": {"layers": 4}, "optimizer": {"learning_rate": 0.001}})
     _ = config.get("model", {})
-    assert config._flattened.unused_input_paths == {"optimizer.learning_rate"}
+    assert config._flattened.get_unused_keys() == {"optimizer.learning_rate"}
 
 # ---------------------------------------------------------------------------
 # Public API surface

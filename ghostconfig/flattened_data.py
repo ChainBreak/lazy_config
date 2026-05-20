@@ -19,8 +19,8 @@ class FlattenedData:
     ``_accessed_paths`` collects every path touched by ``retrieve()``.  When an
     intermediate node is accessed, all of its descendants are also marked as
     accessed so that a single ``get("model", {})`` call correctly counts every
-    key under ``model`` as used.  The ``unused_input_paths`` property is then
-    just a set subtraction.
+    key under ``model`` as used.  ``get_unused_keys()`` is then just a set
+    subtraction.
     """
 
     def __init__(
@@ -33,7 +33,7 @@ class FlattenedData:
         self.source_path = pathlib.Path(source_path) if source_path is not None else None
         self._all_paths: dict[str, Any] = {}
         self._accessed_paths: set[str] = set()
-        self.missing: dict[str, Any] = {}
+        self._missing_keys: dict[str, Any] = {}
 
         if data is not None:
             _flatten_recursive(data, "", self._all_paths)
@@ -50,15 +50,13 @@ class FlattenedData:
         """
         value = self._all_paths.get(dotted_path, _NOT_FOUND)
 
-        # If the value is not found, record the missing path and return the default
         if value is _NOT_FOUND:
-            if dotted_path not in self.missing:
-                self.missing[dotted_path] = default
+            if dotted_path not in self._missing_keys:
+                self._missing_keys[dotted_path] = default
             return default
 
         self._accessed_paths.add(dotted_path)
 
-        # If the value is a dict or list, mark all of its descendants as accessed
         if isinstance(value, (dict, list)):
             prefix = dotted_path + "."
             for path in self._all_paths:
@@ -66,9 +64,12 @@ class FlattenedData:
                     self._accessed_paths.add(path)
         return value
 
-    @property
-    def unused_input_paths(self) -> set[str]:
-        """Leaf (scalar) input paths that were never accessed."""
+    def get_missing_keys(self) -> dict[str, Any]:
+        """Return paths that were requested but absent from the input, mapped to their defaults."""
+        return self._missing_keys
+
+    def get_unused_keys(self) -> set[str]:
+        """Return leaf (scalar) input paths that were never accessed."""
         leaf_paths = {
             path for path, value in self._all_paths.items()
             if path and not isinstance(value, (dict, list))
