@@ -364,12 +364,12 @@ def test_getitem_counter():
     num_people = 10
     data = {"people": [{"name": f"Person {i}"} for i in range(num_people)]}
     config = GhostConfig.create(data)
-    
+
     counter = 0
     for _ in config["people"]:
         counter += 1
     assert counter == num_people
-    
+
 
 # ---------------------------------------------------------------------------
 # Lists — iteration recording missing sub-fields
@@ -466,7 +466,7 @@ def test_get_with_non_leaf():
 def test_unused_keys():
     """Test that only leafs are reported as unused."""
     config = GhostConfig.create({"model": {"layers": 4}, "optimizer": {"learning_rate": 0.001}})
-    model = config.get("model", {})
+    _ = config.get("model", {})
     assert config._flattened.unused_input_paths == {"optimizer.learning_rate"}
 
 # ---------------------------------------------------------------------------

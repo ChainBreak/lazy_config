@@ -57,7 +57,7 @@ class FlattenedData:
             return default
 
         self._accessed_paths.add(dotted_path)
-        
+
         # If the value is a dict or list, mark all of its descendants as accessed
         if isinstance(value, (dict, list)):
             prefix = dotted_path + "."
