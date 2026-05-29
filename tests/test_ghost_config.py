@@ -4,7 +4,9 @@ import json
 import pathlib
 import textwrap
 
+import lightning as L
 import pytest
+import torch
 
 import ghostconfig
 from ghostconfig import ConfigMismatchError, GhostConfig
@@ -73,6 +75,17 @@ def test_from_dict_empty_source_suggests_full_structure():
     assert "model" in message
     assert "layers" in message
     assert "block" in message
+
+
+# ---------------------------------------------------------------------------
+# passthrough — create(ghost_config) returns the same object
+# ---------------------------------------------------------------------------
+
+# Good
+def test_create_with_ghost_config_returns_same_instance():
+    original = GhostConfig.create({"learning_rate": 0.01})
+    passthrough = GhostConfig.create(original)
+    assert passthrough is original
 
 
 # ---------------------------------------------------------------------------
@@ -504,3 +517,65 @@ def test_module_exports_ghost_config():
 
 def test_module_exports_config_mismatch_error():
     assert hasattr(ghostconfig, "ConfigMismatchError")
+
+
+def test_to_and_from_dict():
+    data = {"learning_rate": 0.01}
+    config = GhostConfig.create(data)
+    dict_config = dict(config)
+    assert dict_config == data
+    assert isinstance(dict_config, dict)
+    
+
+# ---------------------------------------------------------------------------
+# Lightning interoperability
+# ---------------------------------------------------------------------------
+
+
+class _LitModel(L.LightningModule):
+    def __init__(self, config: GhostConfig) -> None:
+        super().__init__()
+        self.save_hyperparameters()
+        self.layer = torch.nn.Linear(1, 1)
+
+    def forward(self, x):  # type: ignore[override]
+        return self.layer(x)
+
+    def training_step(self, batch, batch_idx):  # type: ignore[override]
+        (x,) = batch
+        return self.layer(x).sum()
+
+    def configure_optimizers(self):  # type: ignore[override]
+        return torch.optim.SGD(self.parameters(), lr=0.01)
+
+
+def test_lightning_module_save_hyperparameters_stores_ghost_config():
+    config = GhostConfig.create({"learning_rate": 1e-3, "layers": 4})
+    model = _LitModel(config)
+    assert model.hparams["config"] is config
+
+
+def test_lightning_module_checkpoint_round_trip_recovers_ghost_config(tmp_path):
+    config = GhostConfig.create({"learning_rate": 1e-3, "layers": 4})
+    model = _LitModel(config)
+
+    dataloader = torch.utils.data.DataLoader(
+        torch.utils.data.TensorDataset(torch.zeros(2, 1)),
+        batch_size=2,
+    )
+    trainer = L.Trainer(max_epochs=1, logger=False, enable_checkpointing=False, accelerator="cpu")
+    trainer.fit(model, dataloader)
+
+    checkpoint_path = tmp_path / "model.ckpt"
+    trainer.save_checkpoint(checkpoint_path)
+
+    from ghostconfig import flattened_data as flattened_data_module
+
+    safe_globals = [GhostConfig, flattened_data_module.FlattenedData]
+    with torch.serialization.safe_globals(safe_globals):
+        loaded_model = _LitModel.load_from_checkpoint(checkpoint_path)
+    recovered_config = loaded_model.hparams["config"]
+
+    assert isinstance(recovered_config, GhostConfig)
+    assert recovered_config.get("learning_rate", 0.0) == 1e-3
+    assert recovered_config.get("layers", 0) == 4

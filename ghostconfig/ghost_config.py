@@ -34,14 +34,17 @@ class GhostConfig:
     @classmethod
     def create(
         cls,
-        source: str | pathlib.Path | dict[str, Any] | None = None,
+        source: str | pathlib.Path | dict[str, Any] | GhostConfig | None = None,
     ) -> GhostConfig:
         """Create a GhostConfig from a file path, dict, or nothing.
 
+        - GhostConfig → returned as-is
         - str / Path  → load YAML or JSON from disk
         - dict        → wrap the dict directly
         - None        → empty ghost config (all keys missing)
         """
+        if isinstance(source, GhostConfig):
+            return source
         if isinstance(source, (str, pathlib.Path)):
             path = pathlib.Path(source)
             raw = omegaconf.OmegaConf.load(path)
