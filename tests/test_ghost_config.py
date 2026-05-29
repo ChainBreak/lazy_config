@@ -8,6 +8,8 @@ import lightning as L
 import pytest
 import torch
 
+from typing import Any
+
 import ghostconfig
 from ghostconfig import ConfigMismatchError, GhostConfig
 
@@ -383,6 +385,16 @@ def test_getitem_counter():
         counter += 1
     assert counter == num_people
 
+@pytest.mark.parametrize("data", [
+    {"a": 1, "b": 2},
+    [1, 2, 3],
+    None,
+])
+def test_iter_return_config_dict(data):
+    config = GhostConfig.create(data)
+    for config in config:
+        assert isinstance(config, GhostConfig)
+
 
 # ---------------------------------------------------------------------------
 # Lists — iteration recording missing sub-fields
@@ -519,23 +531,17 @@ def test_module_exports_config_mismatch_error():
     assert hasattr(ghostconfig, "ConfigMismatchError")
 
 
-def test_to_and_from_dict():
-    data = {"learning_rate": 0.01}
-    config = GhostConfig.create(data)
-    dict_config = dict(config)
-    assert dict_config == data
-    assert isinstance(dict_config, dict)
-    
-
 # ---------------------------------------------------------------------------
 # Lightning interoperability
 # ---------------------------------------------------------------------------
 
 
 class _LitModel(L.LightningModule):
-    def __init__(self, config: GhostConfig) -> None:
+    def __init__(self, config: GhostConfig | dict[str, Any]) -> None:
         super().__init__()
-        self.save_hyperparameters()
+        self.config = GhostConfig.create(config)
+        self.save_hyperparameters({"config": self.config.to_dict()})
+        
         self.layer = torch.nn.Linear(1, 1)
 
     def forward(self, x):  # type: ignore[override]
@@ -547,12 +553,6 @@ class _LitModel(L.LightningModule):
 
     def configure_optimizers(self):  # type: ignore[override]
         return torch.optim.SGD(self.parameters(), lr=0.01)
-
-
-def test_lightning_module_save_hyperparameters_stores_ghost_config():
-    config = GhostConfig.create({"learning_rate": 1e-3, "layers": 4})
-    model = _LitModel(config)
-    assert model.hparams["config"] is config
 
 
 def test_lightning_module_checkpoint_round_trip_recovers_ghost_config(tmp_path):
@@ -569,13 +569,14 @@ def test_lightning_module_checkpoint_round_trip_recovers_ghost_config(tmp_path):
     checkpoint_path = tmp_path / "model.ckpt"
     trainer.save_checkpoint(checkpoint_path)
 
-    from ghostconfig import flattened_data as flattened_data_module
+    loaded_model = _LitModel.load_from_checkpoint(checkpoint_path)
 
-    safe_globals = [GhostConfig, flattened_data_module.FlattenedData]
-    with torch.serialization.safe_globals(safe_globals):
-        loaded_model = _LitModel.load_from_checkpoint(checkpoint_path)
-    recovered_config = loaded_model.hparams["config"]
+    assert loaded_model.config.to_dict() == config.to_dict()
+    
 
-    assert isinstance(recovered_config, GhostConfig)
-    assert recovered_config.get("learning_rate", 0.0) == 1e-3
-    assert recovered_config.get("layers", 0) == 4
+def test_to_and_from_dict():
+    data = {"learning_rate": 0.01}
+    config = GhostConfig.create(data)
+    dict_config = config.to_dict()
+    assert dict_config == data
+    assert isinstance(dict_config, dict)

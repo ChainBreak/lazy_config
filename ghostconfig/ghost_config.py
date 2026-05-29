@@ -107,6 +107,11 @@ class GhostConfig:
             yield GhostConfig(self._flattened, child_path)
 
 
+    def to_dict(self) -> dict[str, Any]:
+        """Return the underlying config as a plain dict at the current path prefix."""
+        value = self._flattened.retrieve(self._path_prefix, {})
+        return cast("dict[str, Any]", value)
+
     def check(self) -> None:
         """Raise ConfigMismatchError if any keys were missing from or unused in the config."""
         if self._flattened.get_missing_keys() or self._flattened.get_unused_keys():
