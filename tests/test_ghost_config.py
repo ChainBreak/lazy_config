@@ -580,3 +580,49 @@ def test_to_and_from_dict():
     dict_config = config.to_dict()
     assert dict_config == data
     assert isinstance(dict_config, dict)
+
+
+# ---------------------------------------------------------------------------
+# Scoped check — check() respects path prefix
+# ---------------------------------------------------------------------------
+
+
+def test_check_on_sub_config_ignores_unused_keys_outside_scope():
+    """check() on config["model"] should not raise for unused keys outside "model"."""
+    config = GhostConfig.create({"model": {"layers": 4}, "optimizer": {"learning_rate": 0.001}})
+    config["model"].get("layers", 1)
+    # model sub-config has no issues — optimizer.learning_rate is outside scope
+    config["model"].check()  # should not raise
+    # root check should still raise because optimizer.learning_rate is unused
+    with pytest.raises(ConfigMismatchError) as exc_info:
+        config.check()
+    assert "optimizer.learning_rate" in str(exc_info.value)
+
+
+def test_check_on_sub_config_ignores_missing_keys_outside_scope():
+    """check() on config["model"] should not raise for missing keys outside "model"."""
+    config = GhostConfig.create({"model": {"layers": 4}})
+    config["model"].get("layers", 1)
+    config["training"].get("epochs", 10)  # missing, outside "model" scope
+    # model sub-config is fully satisfied
+    config["model"].check()  # should not raise
+
+
+def test_check_on_sub_config_reports_in_scope_missing_keys():
+    """check() on config["model"] raises when a key inside "model" is missing."""
+    config = GhostConfig.create({"model": {"layers": 4}})
+    config["model"].get("layers", 1)
+    config["model"].get("hidden_size", 256)  # missing inside "model"
+    with pytest.raises(ConfigMismatchError) as exc_info:
+        config["model"].check()
+    assert "model.hidden_size" in str(exc_info.value)
+
+
+def test_check_on_sub_config_reports_in_scope_unused_keys():
+    """check() on config["model"] raises when a key inside "model" is unused."""
+    config = GhostConfig.create({"model": {"layers": 4, "hidden_size": 256}})
+    config["model"].get("layers", 1)
+    # hidden_size is in "model" scope but never accessed
+    with pytest.raises(ConfigMismatchError) as exc_info:
+        config["model"].check()
+    assert "model.hidden_size" in str(exc_info.value)

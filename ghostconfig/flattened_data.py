@@ -69,20 +69,43 @@ class FlattenedData:
                     self._accessed_paths.add(path)
         return value
 
-    def get_missing_keys(self) -> dict[str, Any]:
-        """Return paths that were requested but absent from the input, mapped to their defaults."""
-        return self._missing_keys
+    def get_missing_keys(self, path_prefix: str = "") -> dict[str, Any]:
+        """Return paths that were requested but absent from the input, mapped to their defaults.
 
-    def get_missing_key_locations(self) -> dict[str, tuple[str, int]]:
-        """Return the call-site (file path, line number) for each path requested but absent."""
-        return self._missing_key_locations
+        When *path_prefix* is given, only paths that fall under that prefix are returned.
+        """
+        if not path_prefix:
+            return self._missing_keys
+        return {
+            path: default
+            for path, default in self._missing_keys.items()
+            if _is_under_prefix(path, path_prefix)
+        }
 
-    def get_unused_keys(self) -> set[str]:
-        """Return leaf (scalar) input paths that were never accessed."""
+    def get_missing_key_locations(self, path_prefix: str = "") -> dict[str, tuple[str, int]]:
+        """Return the call-site (file path, line number) for each path requested but absent.
+
+        When *path_prefix* is given, only paths under that prefix are returned.
+        """
+        if not path_prefix:
+            return self._missing_key_locations
+        return {
+            path: location
+            for path, location in self._missing_key_locations.items()
+            if _is_under_prefix(path, path_prefix)
+        }
+
+    def get_unused_keys(self, path_prefix: str = "") -> set[str]:
+        """Return leaf (scalar) input paths that were never accessed.
+
+        When *path_prefix* is given, only leaf paths under that prefix are considered.
+        """
         leaf_paths = {
             path for path, value in self._all_paths.items()
             if path and not isinstance(value, (dict, list))
         }
+        if path_prefix:
+            leaf_paths = {path for path in leaf_paths if _is_under_prefix(path, path_prefix)}
         return leaf_paths - self._accessed_paths
 
 
@@ -103,6 +126,11 @@ def _find_caller_outside_package() -> tuple[str, int] | None:
         if not caller_file.startswith(package_directory):
             return frame_info.filename, frame_info.lineno
     return None
+
+
+def _is_under_prefix(path: str, prefix: str) -> bool:
+    """Return True when *path* equals *prefix* or is a descendant of it."""
+    return path == prefix or path.startswith(prefix + ".")
 
 
 def _flatten_recursive(
