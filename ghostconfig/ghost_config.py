@@ -113,7 +113,8 @@ class GhostConfig:
         return cast("dict[str, Any]", value)
 
     def check(self) -> None:
-        """Raise ConfigMismatchError if any in-scope keys were missing from or unused in the config."""
+        """Raise ConfigMismatchError if any in-scope keys were missing from
+        or unused in the config."""
         missing = self._flattened.get_missing_keys(self._path_prefix)
         unused = self._flattened.get_unused_keys(self._path_prefix)
         if missing or unused:

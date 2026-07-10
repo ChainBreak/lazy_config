@@ -3,12 +3,11 @@ from __future__ import annotations
 import json
 import pathlib
 import textwrap
+from typing import Any
 
 import lightning as L
 import pytest
 import torch
-
-from typing import Any
 
 import ghostconfig
 from ghostconfig import ConfigMismatchError, GhostConfig
@@ -541,7 +540,7 @@ class _LitModel(L.LightningModule):
         super().__init__()
         self.config = GhostConfig.create(config)
         self.save_hyperparameters({"config": self.config.to_dict()})
-        
+
         self.layer = torch.nn.Linear(1, 1)
 
     def forward(self, x):  # type: ignore[override]
@@ -572,7 +571,7 @@ def test_lightning_module_checkpoint_round_trip_recovers_ghost_config(tmp_path):
     loaded_model = _LitModel.load_from_checkpoint(checkpoint_path)
 
     assert loaded_model.config.to_dict() == config.to_dict()
-    
+
 
 def test_to_and_from_dict():
     data = {"learning_rate": 0.01}
