@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import pathlib
 import textwrap
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 import lightning as L
@@ -625,3 +626,34 @@ def test_check_on_sub_config_reports_in_scope_unused_keys():
     with pytest.raises(ConfigMismatchError) as exc_info:
         config["model"].check()
     assert "model.hidden_size" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# Multiprocessing — ConfigMismatchError must survive being pickled back to the
+# parent process when check() fails inside a child process.
+# ---------------------------------------------------------------------------
+
+
+def test_check_error_pickles_back_from_child_process():
+    """A check() failure in a child process propagates as a ConfigMismatchError.
+
+    ProcessPoolExecutor pickles the exception in the child and unpickles it in
+    the parent, so this exercises the round-trip that a naive __init__ signature
+    would break.
+    """
+    config = GhostConfig.create({})
+
+    with ProcessPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(_run_check_with_missing_key_in_child, config)
+        with pytest.raises(ConfigMismatchError) as exc_info:
+            future.result()
+    assert "learning_rate" in str(exc_info.value)
+
+def _run_check_with_missing_key_in_child(config: GhostConfig) -> None:
+    """Access a key that is absent and then check(), raising ConfigMismatchError.
+
+    Executed inside a child process so the raised error must be pickled and sent
+    back to the parent.
+    """
+    _ = config.get("learning_rate", 0.001)
+    config.check()

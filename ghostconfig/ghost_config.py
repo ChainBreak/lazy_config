@@ -118,7 +118,7 @@ class GhostConfig:
         missing = self._flattened.get_missing_keys(self._path_prefix)
         unused = self._flattened.get_unused_keys(self._path_prefix)
         if missing or unused:
-            raise errors_module.ConfigMismatchError(self._flattened, self._path_prefix)
+            raise errors_module.ConfigMismatchError.create_formatted_error_message(self._flattened, self._path_prefix)
 
 
 def _join_path(prefix: str, key: str | int) -> str:

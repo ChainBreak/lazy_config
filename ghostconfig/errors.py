@@ -7,11 +7,15 @@ from . import suggestions as suggestions_module
 class ConfigMismatchError(ValueError):
     """Raised by `GhostConfig.check()` when keys were missing from or unused in the config."""
 
-    def __init__(
-        self,
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+    @classmethod
+    def create_formatted_error_message(
+        cls,
         flattened: flattened_data_module.FlattenedData,
         path_prefix: str = "",
-    ) -> None:
+    ) -> "ConfigMismatchError":
         parts: list[str] = []
 
         missing = flattened.get_missing_keys(path_prefix)
@@ -44,7 +48,7 @@ class ConfigMismatchError(ValueError):
                 f"{suggestion}"
             )
 
-        super().__init__("\n\n".join(parts))
+        return cls("\n\n".join(parts))
 
 
 def _describe_source(flattened: flattened_data_module.FlattenedData) -> str:
